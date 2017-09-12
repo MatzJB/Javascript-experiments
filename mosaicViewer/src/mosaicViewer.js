@@ -1,26 +1,6 @@
-/* global THREE, Detector, container, dat, window */
-
 if (!Detector.webgl) Detector.addGetWebGLMessage()
-/*
-https://stackoverflow.com/questions/20661941/how-to-map-texture-on-a-custom-non-square-quad-in-three-js
 
-todo: fix mapping of uv coordinates to random stuff
-fix so the mapping is correct
-
-Todo 28/7:
-1 - Fix smooth navigation...[v] (28/7)
-2 - Understand how uv mapping works in three...[v] (28/7)
-3 - mouse interaction
-4 - disable anisotropy
-5 - keys should be able to be pressed simultaneously
-6 - Fix wireframe mode
-
-7 - zoom in using touch events
-
-todo: 
-* read json based on button event
-
-*/
+var DEBUG = true
 // mosaic data is populated after reading mosic.json
 var MOSAICDATA = {
   'minDistance': 0.004,
@@ -28,7 +8,6 @@ var MOSAICDATA = {
   'mosaicFilename': '',
   'mosaicRoot': 'gallery'
 }
-// filename: 'textures/time-100-influential-photos-lunch-atop-skyscraper-19_mosaic_zip.jpg' 
 
 var isTouchDevice = false
 var dx = 0,
@@ -42,7 +21,6 @@ var dxIsCoolingDown = false,
   dzIsCoolingDown = false
 var movement = 0 // [0,1]
 var speed = 0.02 // default speed of movement
-// var keyIsUp = false
 
 // var mousePressed = false // used to navigate
 var camera, scene, renderer
@@ -56,20 +34,21 @@ var bNonBlinn
 var shading
 var wireMaterial, flatMaterial, texturedMaterial
 
-var teapot, textureCube
+var billboard, textureCube
 
 var diffuseColor = new THREE.Color()
 var specularColor = new THREE.Color()
 
-var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar', 
-                  'pig', 'the kiss', 'Trump', 'colette', 'gargantua', 'helpinghand','rainbow', 'jobs', 'chess']
+//todo: read gallery from json 
+var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
+  'pig', 'the kiss', 'Trump', 'colette', 'gargantua', 'helpinghand', 'rainbow', 'jobs', 'chess']
 var buttons = []
 
 init()
 render()
 animate()
 
-function getJSONData (filename, cb) {
+function getJSONData(filename, cb) {
   var client = new window.XMLHttpRequest()
   client.open('GET', filename)
 
@@ -84,35 +63,35 @@ function getJSONData (filename, cb) {
 }
 
 
-function is_touch_device() {  
-  try {  
-    document.createEvent("TouchEvent");  
-    return true;  
-  } catch (e) {  
-    return false;  
-  }  
+function is_touch_device() {
+  try {
+    document.createEvent("TouchEvent");
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 
-function init () {
-  isTouchDevice = is_touch_device()  
+function init() {
+  isTouchDevice = is_touch_device()
   console.log('touch device?', isTouchDevice)
   console.log('creating buttons:')
   for (let i = 0; i < buttonNames.length; i++) {
     buttons[i] = document.createElement('BUTTON')
-
     var info = document.getElementById('info')
     info.appendChild(buttons[i])
-    
-
     buttons[i].setAttribute('name', buttonNames[i])
     buttons[i].innerHTML = buttonNames[i]
+
     console.log('added  button', buttonNames[i])
     console.log('attempting to load json:', buttonNames[i])
+
     buttons[i].addEventListener('click', function () {
       getAllJSONData(MOSAICDATA['mosaicRoot'] + '/mosaic_' + buttonNames[i] + '.json')
 
-      updateButton()}, false)
+      updateButton()
+    }, false)
   }
 
   container = document.createElement('div')
@@ -145,74 +124,57 @@ function init () {
   el.addEventListener("touchstart", touchStart, false);
 
 
-/*  
-  src.addEventListener('touchend', function(e) {
-    var deltaX, deltaY;
   
-    // Compute the change in X and Y coordinates. 
-    // The first touch point in the changedTouches
-    // list is the touch point that was just removed from the surface.
-    deltaX = e.changedTouches[0].clientX - clientX;
-    deltaY = e.changedTouches[0].clientY - clientY;
-  
-    // Process the data ... 
-  }, false);
-*/
 
 
-function touchStart(event) {
-console.log('touch start')
-var x
-var y
+  function touchStart(event) {
+    console.log('touch start')
+    var x
+    var y
 
 
-//todo: zoom in functionaliy in a direction given by position compared to center
-if (is_touch_device()){
+    //todo: zoom in functionaliy in a direction given by position compared to center
+    if (is_touch_device()) {
 
 
-x = event.touches[0].clientX;
-y = event.touches[0].clientY;
-}
-else
-{
-x = event.pageX
-y = event.pageY
-}
-zoomXY = {'x':x, 'y':y}
+      x = event.touches[0].clientX;
+      y = event.touches[0].clientY;
+    }
+    else {
+      x = event.pageX
+      y = event.pageY
+    }
+    zoomXY = { 'x': x, 'y': y }
 
 
-console.log("X coords: " + x + ", Y coords: " + y)
-}
-
-function touchEnd(event){
-  console.log('touch end')
-  
+    console.log("X coords: " + x + ", Y coords: " + y)
   }
-  
+
+  function touchEnd(event) {
+    console.log('touch end')
+
+  }
+
   console.log(window)
 
   var textureMap
   var materialColor = new THREE.Color()
 
   texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor, map: textureMap })
-  
-// choose a better filter?
+
+  // choose a better filter?
   texturedMaterial.generateMipmaps = true
   texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
   texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
   wireMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
-
-  // scene itself
+  
   scene = new THREE.Scene()
-
-  // scene.add(ambientLight)
-  console.log('added light')
   scene.add(light)
 
-  setupGui()
+    //setupGui()
 }
 
-function getAllJSONData (filename, cb) {
+function getAllJSONData(filename, cb) {
   getJSONData(filename, function (data) {
     console.log('mosaic data:', data)
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
@@ -220,27 +182,22 @@ function getAllJSONData (filename, cb) {
     MOSAICDATA.mosaicIndices = data['mosaicIndices']
     MOSAICDATA.mosaicMetadata = data['metadata']
     console.log('spritemap:', spriteMapJsonFilename)
-    // use indices to visualize
-
+    
     getJSONData(spriteMapJsonFilename, function (spriteData) {
       console.log('spritemap data:', spriteData)
       MOSAICDATA.spritemapMetadata = spriteData['metadata']
       MOSAICDATA.spritemapColordata = './' + MOSAICDATA['mosaicRoot'] + '/' + spriteData['colordata']
-
-      // textureMap = new THREE.TextureLoader().load('/test.png')
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
 
       console.log('spritemap color data file', MOSAICDATA.spritemapColordata)
-      // textureMap.anisotropy = 2
       console.log('applying map:', textureMap)
       texturedMaterial.map = textureMap
 
       textureMap.onload = function () {
         console.log('image:', textureMap.image)
         console.log('>>>> LOADED texture')
-        // createSprite(0, 0, 0)
         console.log('texturemap:', textureMap)
-        teapot.material.needsUpdate = true
+        billboard.material.needsUpdate = true
       }
     })
 
@@ -249,12 +206,12 @@ function getAllJSONData (filename, cb) {
 
     var info = document.getElementById('info')
 
-  // info.innerText = MOSAICDATA.mosaicFilename
-  // cb()
+    // info.innerText = MOSAICDATA.mosaicFilename
+    // cb()
   })
 }
 
-function updateButton () {
+function updateButton() {
   console.log('MOSAICDATA', MOSAICDATA)
 
   if (MOSAICDATA['mosaicMetadata'] != undefined) {
@@ -262,11 +219,11 @@ function updateButton () {
     createSprite(MOSAICDATA.indices,
       MOSAICDATA['mosaicMetadata'],
       MOSAICDATA['spritemapMetadata'])
-    teapot.material.needsUpdate = true; // really?
+    billboard.material.needsUpdate = true; // really?
   }
 }
 
-function show_image (src) {
+function show_image(src) {
   var img = document.createElement('img')
   img.src = src
   img.width = 1000
@@ -276,7 +233,7 @@ function show_image (src) {
   document.body.appendChild(img)
 }
 
-function onKeyUp (e) {
+function onKeyUp(e) {
   // keyIsUp = true
 
   switch (e.keyCode) {
@@ -317,13 +274,13 @@ function onKeyUp (e) {
   }
 }
 
-function resetdxyz () {
+function resetdxyz() {
   dx = 0
   dy = 0
   dz = 0
 }
 
-function onKeyDown (e) {
+function onKeyDown(e) {
   keyIsUp = false
 
   // note: we we switch direction quicker than the repetition speed, we will see this in the movement of the camera
@@ -369,7 +326,7 @@ function onKeyDown (e) {
 }
 
 // EVENT HANDLERS
-function onWindowResize () {
+function onWindowResize() {
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
   renderer.setSize(canvasWidth, canvasHeight)
@@ -379,7 +336,7 @@ function onWindowResize () {
   render()
 }
 
-function setupGui () {
+function setupGui() {
   effectController = {
     shininess: 40.0,
     ka: 0.17,
@@ -411,18 +368,18 @@ function setupGui () {
 }
 
 //
-function render () {
+function render() {
+
+  shading = 'textured'
+/*
   if (effectController.nonblinn !== bNonBlinn ||
     effectController.newShading !== shading) {
     bNonBlinn = effectController.nonblinn
     shading = effectController.newShading
   }
+*/
 
-  // We're a bit lazy here. We could check to see if any material attributes changed and update
-  // only if they have. But, these calls are cheap enough and this is just a demo.
-  // phongMaterial.shininess = effectController.shininess
-  // texturedMaterial.shininess = effectController.shininess
-
+  /*
   diffuseColor.setHSL(effectController.hue, effectController.saturation, effectController.lightness)
   if (effectController.metallic) {
     // make colors match to give a more metallic look
@@ -431,10 +388,6 @@ function render () {
     // more of a plastic look
     specularColor.setRGB(1, 1, 1)
   }
-
-  diffuseColor.multiplyScalar(effectController.kd)
-  // Ambient's actually controlled by the light for this demo
-  // ambientLight.color.setHSL(effectController.hue, effectController.saturation, effectController.lightness * effectController.ka)
 
   light.position.set(effectController.lx, effectController.ly, effectController.lz)
   light.color.setHSL(effectController.lhue, effectController.lsaturation, effectController.llightness)
@@ -445,71 +398,27 @@ function render () {
   } else {
     scene.background = new THREE.Color(0, 0, 0)
   }
+  */
+  scene.background = new THREE.Color(0, 0, 0)
   //  console.log("noticed a change, shading=", shading)
   renderer.render(scene, camera)
 }
 
-/*getMappingCoordinates({x:3, y:5}, 
-                        {width:10, height:10}, 
-                        {width:10, height:10})
-*/
-// args: bounds.min, bounds.max
-// indexing is row-major?
-function getMappingCoordinates (vertexCoord, indexDims, spriteDims) {
-  // bounds?
-  /*
-  var range = Math.abs(bounds.max) + Math.abs(bounds.min)
-  var xNorm = (vertexCoord.x + Math.abs(bounds.min)) / range
-  var yNorm = (vertexCoord.y + Math.abs(bounds.min)) / range
-
-  var indexX = xNorm * indexDims.width
-  var indexY = yNorm * indexDims.height
-  var spriteX = xNorm * spriteDims.width
-  var spriteY = yNorm * spriteDims.height
-
-  return {
-      rowIndex: indexX,
-      colIndex: indexY,
-      rowSprite: spriteX,
-      colSprite: spriteY
-  }
-  */
-}
-
-/*
-http://stackoverflow.com/questions/27097884/three-js-efficiently-mapping-uvs-to-plane
-https://threejs.org/docs/#api/core/BufferGeometry
-
-*/
-
-// var index = worldToIndex({max:1, min:-1}, {x:5, y:10})
 
 /* 
-1 - Create a plane with UV coordinates pointing into a <spritemap> using the mosaic <indices> matrix.
+  Create a plane with UV coordinates pointing into a <spritemap> using the mosaic <indices> matrix.
 */
-function createSprite (indices, mosaicmetadata, spritemapmetadata) {
+function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   var spriteMapPixelWidth = spritemapmetadata['pixelWidth']
   var spriteMapPixelHeight = spritemapmetadata['pixelHeight']
   var tilesXsprite = spritemapmetadata['columns']
   var tilesYsprite = spritemapmetadata['rows']
   var ratio = spritemapmetadata['ratio']
-
   var tilesX = mosaicmetadata['columns']
   var tilesY = mosaicmetadata['rows']
+  var maxDim = Math.max(tilesX, tilesY)
 
-  var maxDim =  Math.max(tilesX, tilesY)
-
-  console.log('maxDim', maxDim)
   MOSAICDATA.maxDistance = maxDim
-  // this part will not load until the image is loaded, maybe callback this?
-
-  // console.log('tilesX:', tilesX, ' tilesY:', tilesY)
-  /*    var mapping = getMappingCoordinates({ 'x': 3, 'y': 5 },
-          { 'min': 2, 'max': 8 },
-          { 'width': 10, 'height': 10 },
-          { 'width': 5000, 'height': 4000 })
-    */
-  // ar mapping = getMappingCoordinates (vertexCoord, bounds, indexDims, spriteDims)
 
   // values should be normalized 
   var mosaicRatio = tilesX / tilesY
@@ -524,20 +433,9 @@ function createSprite (indices, mosaicmetadata, spritemapmetadata) {
 
   // todo: normalize tiling, calculate ratio and resize to fit screen
   var geometry = new THREE.PlaneGeometry(tilesX, ratio * tilesY, tilesX, tilesY)
-  // map coordinates from quad to sprite map
-  var i = 1
   var j = 1
-  var map = getMappingCoordinates({ y: i, x: j }, { min: -1, max: 1 }, { width: 10, height: 10 }, { width: 10, height: 10 })
-
-  //  var nVertices = tilesX * tilesY * 3 * 2 // 3*2 vertices per quad, tilesX*TilesY quads
-  // go through all indices
-  // replace uv quad with sprite coordinates
-
-  //  for (var i = 0; i < geometry.faceVertexUvs[0].length-1; i+=2) {
   for (var i = 0; i < 2 * tilesX * tilesY; i += 2) {
 
-    // new uv mapping coordinates.
-    // triangle 1 >>
     /**
      * Quad coordinates (q1-q4):
      * (1)----(4)
@@ -583,58 +481,20 @@ function createSprite (indices, mosaicmetadata, spritemapmetadata) {
 
   geometry.uvsNeedUpdate = true
 
-  teapot = new THREE.Mesh(
-    geometry,
-    shading === 'wireframe' ? wireMaterial : (
-      shading === 'flat' ? flatMaterial : (
-        shading === 'textured' ? texturedMaterial : flatMaterial)))
-  console.log('mesh:', teapot)
-
-  geometry.uvsNeedUpdate = true
-
-  // teapot.material.needsUpdate = true; //really?
-  scene.add(teapot)
+  billboard = new THREE.Mesh(geometry, texturedMaterial)
+  //  geometry.uvsNeedUpdate = true
+  scene.add(billboard)
 }
 
-// Whenever the teapot changes, the scene is rebuilt from scratch (not much to it).
-function createNewTeapot () {
-  var teapotSize = 10
-  var tess = true
-  var tess = true
-  var bottom = true
-  var lid = true
-  var body = true
-  var fitLid = true
-  var nonblinn = true
-
-  var teapotGeometry = new THREE.TeapotBufferGeometry(teapotSize,
-    tess,
-    bottom,
-    lid,
-    body,
-    fitLid, !nonblinn)
-
-  teapot = new THREE.Mesh(
-    teapotGeometry,
-    shading === 'wireframe' ? wireMaterial : (
-      shading === 'flat' ? flatMaterial : (
-        shading === 'smooth' ? gouraudMaterial : (
-          shading === 'glossy' ? phongMaterial : (
-            shading === 'textured' ? texturedMaterial : reflectiveMaterial))))) // if no match, pick Phong
-
-  console.log('updated model')
-  scene.add(teapot)
-}
-
-function onMouseDown () {
+function onMouseDown() {
   mousePressed = true
 }
 
-function onMouseUp () {
+function onMouseUp() {
   mousePressed = false
 }
 
-function animate () {
+function animate() {
   if (dxIsCoolingDown && Math.abs(dxSpeed) > 0) {
     dxSpeed *= 0.8
   }
