@@ -1,6 +1,6 @@
 if (!Detector.webgl) Detector.addGetWebGLMessage()
 
-var DEBUG = false
+var DEBUG = true
 // mosaic data is populated after reading mosic.json
 var MOSAICDATA = {
   'minDistance': 0.004,
@@ -68,8 +68,8 @@ function log(str) {
 
 function init() {
   isTouchDevice = is_touch_device()
-  log('touch device?', isTouchDevice)
-  log('creating buttons:')
+  log('touch device?' + isTouchDevice)
+  
 
   for (let i = 0; i < buttonNames.length; i++) {
     buttons[i] = document.createElement('BUTTON')
@@ -77,14 +77,8 @@ function init() {
     info.appendChild(buttons[i])
     buttons[i].setAttribute('name', buttonNames[i])
     buttons[i].innerHTML = buttonNames[i]
-
-    log('added  button', buttonNames[i])
-    log('attempting to load json:', buttonNames[i])
-
     buttons[i].addEventListener('click', function () {
       getAllJSONData(MOSAICDATA['mosaicRoot'] + '/mosaic_' + buttonNames[i] + '.json')
-
-      updateButton()
     }, false)
   }
 
@@ -96,8 +90,6 @@ function init() {
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1.1 * MOSAICDATA.maxDistance)
   log('camera was init')
   camera.position.set(0, 0, MOSAICDATA.maxDistance)
-  log('camera', camera)
-
   ambientLight = new THREE.AmbientLight(0x000000) // 0.2
   light = new THREE.DirectionalLight(0xFFFFFF, 1.0)
 
@@ -132,8 +124,6 @@ function init() {
       y = event.pageY
     }
     zoomXY = { 'x': x, 'y': y }
-
-
     log("X coords: " + x + ", Y coords: " + y)
   }
 
@@ -141,58 +131,60 @@ function init() {
     log('touch end')
 
   }
-
   
   var materialColor = new THREE.Color()
   texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor})
-  texturedMaterial.generateMipmaps = true
+  texturedMaterial.generateMipmaps = false
   texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
   texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
-  
-  scene = new THREE.Scene()
+
+texturedMaterial.wrapS = THREE.ClampToEdgeWrapping,
+texturedMaterial.wrapY = THREE.ClampToEdgeWrapping,
+
+scene = new THREE.Scene()
   scene.add(light)
 }
 
 function getAllJSONData(filename, cb) {
   getJSONData(filename, function (data) {
-    log('mosaic data:', data)
+    
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
-    log('spritemap filename', spriteMapJsonFilename)
+    log('spritemap filename: '+ spriteMapJsonFilename)
     MOSAICDATA.mosaicIndices = data['mosaicIndices']
     MOSAICDATA.mosaicMetadata = data['metadata']
-    log('spritemap:', spriteMapJsonFilename)
+    log('spritemap: ' + spriteMapJsonFilename)
 
     getJSONData(spriteMapJsonFilename, function (spriteData) {
-      log('spritemap data:', spriteData)
+      log('spritemap data: ' + spriteData)
       MOSAICDATA.spritemapMetadata = spriteData['metadata']
       MOSAICDATA.spritemapColordata = './' + MOSAICDATA['mosaicRoot'] + '/' + spriteData['colordata']
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
 
-      log('spritemap color data file', MOSAICDATA.spritemapColordata)
-      log('applying map:', textureMap)
+      log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
+    
       texturedMaterial.map = textureMap
 
       textureMap.onload = function () {
-        log('image:', textureMap.image)
+        log('image:' + textureMap.image)
         log('>>>> LOADED texture')
-        log('texturemap:', textureMap)
+    
         billboard.material.needsUpdate = true
       }
+      updateButton()
     })
 
     MOSAICDATA.indices = data['mosaicIndices']
     MOSAICDATA.metadata = data['metadata']
-
+    
     //var info = document.getElementById('info')
     // info.innerText = MOSAICDATA.mosaicFilename
   })
 }
 
 function updateButton() {
-  log('MOSAICDATA', MOSAICDATA)
+  log('MOSAICDATA ' + MOSAICDATA)
 
   if (MOSAICDATA['mosaicMetadata'] != undefined) {
-    log('updating sprite')
     createSprite(MOSAICDATA.indices,
       MOSAICDATA['mosaicMetadata'],
       MOSAICDATA['spritemapMetadata'])
@@ -318,7 +310,6 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   var ratio = spritemapmetadata['ratio']
   var tilesX = mosaicmetadata['columns']
   var tilesY = mosaicmetadata['rows']
-  var maxDim = Math.max(tilesX, tilesY)
   var mosaicRatio = tilesX / tilesY
   var spriteRatio = tilesXsprite / tilesYsprite
 
