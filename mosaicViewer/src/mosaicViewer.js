@@ -1,6 +1,6 @@
 if (!Detector.webgl) Detector.addGetWebGLMessage()
 
-var DEBUG = true
+var DEBUG = false
 // mosaic data is populated after reading mosic.json
 var MOSAICDATA = {
   'minDistance': 0.004,
@@ -23,12 +23,8 @@ var movement = 0 // [0,1]
 var speed = 0.02 // default speed of movement
 var camera, scene, renderer
 var cameraControls
-var effectController
-
 var ambientLight, light
-var wireMaterial, flatMaterial, texturedMaterial
-
-var billboard, textureCube
+var billboard
 
 //todo: read gallery from json 
 var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
@@ -63,8 +59,8 @@ function is_touch_device() {
   }
 }
 
-function log(str){
-  if (DEBUG){
+function log(str) {
+  if (DEBUG) {
     console.log(str)
 
   }
@@ -97,7 +93,7 @@ function init() {
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
 
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1.5*MOSAICDATA.maxDistance)
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1.1 * MOSAICDATA.maxDistance)
   log('camera was init')
   camera.position.set(0, 0, MOSAICDATA.maxDistance)
   log('camera', camera)
@@ -105,8 +101,7 @@ function init() {
   ambientLight = new THREE.AmbientLight(0x000000) // 0.2
   light = new THREE.DirectionalLight(0xFFFFFF, 1.0)
 
-  // renderer = new THREE.WebGLRenderer( { antialias: true } )
-  renderer = new THREE.WebGLRenderer()
+   renderer = new THREE.WebGLRenderer()
   renderer.setClearColor(0xAAAAAA)
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(canvasWidth, canvasHeight)
@@ -147,19 +142,13 @@ function init() {
 
   }
 
-  log(window)
-
-  var textureMap
+  
   var materialColor = new THREE.Color()
-
-  texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor, map: textureMap })
-
-  // choose a better filter?
+  texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor})
   texturedMaterial.generateMipmaps = true
   texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
   texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
-  wireMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
-
+  
   scene = new THREE.Scene()
   scene.add(light)
 }
@@ -207,18 +196,8 @@ function updateButton() {
     createSprite(MOSAICDATA.indices,
       MOSAICDATA['mosaicMetadata'],
       MOSAICDATA['spritemapMetadata'])
-    billboard.material.needsUpdate = true; // really?
+    billboard.material.needsUpdate = true;
   }
-}
-
-function show_image(src) {
-  var img = document.createElement('img')
-  img.src = src
-  img.width = 1000
-  img.height = 1000
-
-  // This next line will just add it to the <body> tag
-  document.body.appendChild(img)
 }
 
 function onKeyUp(e) {
@@ -313,7 +292,6 @@ function onKeyDown(e) {
   }
 }
 
-// EVENT HANDLERS
 function onWindowResize() {
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
@@ -323,17 +301,15 @@ function onWindowResize() {
 
   render()
 }
-function render() {
 
+function render() {
   shading = 'textured'
   scene.background = new THREE.Color(0, 0, 0)
   renderer.render(scene, camera)
 }
 
 
-/* 
-  Create a plane with UV coordinates pointing into a <spritemap> using the mosaic <indices> matrix.
-*/
+/* Create a plane with UV coordinates pointing into a <spritemap> using the mosaic <indices> matrix. */
 function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   var spriteMapPixelWidth = spritemapmetadata['pixelWidth']
   var spriteMapPixelHeight = spritemapmetadata['pixelHeight']
@@ -349,7 +325,7 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   if (mosaicRatio > 1.0) {
     mosaicRatio = 1 / mosaicRatio
   }
-  
+
   if (spriteRatio > 1.0) {
     spriteRatio = 1 / spriteRatio
   }
@@ -373,14 +349,13 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
      */
 
     // coordinates are row-major, so they should be row major in mosaic data layout
-
-    var tmp = i/2
+    var tmp = i / 2
     j = indices[tmp] - 1
 
     // xx <- [0, tilesXsprite-1]
     var xx = j % tilesXsprite
     var yy = Math.floor(j / tilesXsprite) // starting from top of the sprite map
-    
+
     var xs = 1.0 * xx / tilesXsprite
     var ys = 1.0 * yy / tilesYsprite
 
