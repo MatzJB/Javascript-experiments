@@ -4,7 +4,7 @@ var DEBUG = true
 // mosaic data is populated after reading mosic.json
 var MOSAICDATA = {
   'minDistance': 0.004,
-  'maxDistance': 100,
+  'maxDistance': 200,
   'mosaicFilename': '',
   'mosaicRoot': 'gallery'
 }
@@ -21,23 +21,14 @@ var dxIsCoolingDown = false,
   dzIsCoolingDown = false
 var movement = 0 // [0,1]
 var speed = 0.02 // default speed of movement
-
-// var mousePressed = false // used to navigate
 var camera, scene, renderer
 var cameraControls
 var effectController
 
 var ambientLight, light
-var skybox
-
-var bNonBlinn
-var shading
 var wireMaterial, flatMaterial, texturedMaterial
 
 var billboard, textureCube
-
-var diffuseColor = new THREE.Color()
-var specularColor = new THREE.Color()
 
 //todo: read gallery from json 
 var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
@@ -54,7 +45,7 @@ function getJSONData(filename, cb) {
 
   client.onreadystatechange = function () {
     if (client.readyState === 4) {
-      console.log('json was read')
+      log('json was read')
       var data = JSON.parse(client.responseText)
       cb(data)
     }
@@ -72,11 +63,18 @@ function is_touch_device() {
   }
 }
 
+function log(str){
+  if (DEBUG){
+    console.log(str)
+
+  }
+}
 
 function init() {
   isTouchDevice = is_touch_device()
-  console.log('touch device?', isTouchDevice)
-  console.log('creating buttons:')
+  log('touch device?', isTouchDevice)
+  log('creating buttons:')
+
   for (let i = 0; i < buttonNames.length; i++) {
     buttons[i] = document.createElement('BUTTON')
     var info = document.getElementById('info')
@@ -84,8 +82,8 @@ function init() {
     buttons[i].setAttribute('name', buttonNames[i])
     buttons[i].innerHTML = buttonNames[i]
 
-    console.log('added  button', buttonNames[i])
-    console.log('attempting to load json:', buttonNames[i])
+    log('added  button', buttonNames[i])
+    log('attempting to load json:', buttonNames[i])
 
     buttons[i].addEventListener('click', function () {
       getAllJSONData(MOSAICDATA['mosaicRoot'] + '/mosaic_' + buttonNames[i] + '.json')
@@ -99,10 +97,10 @@ function init() {
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
 
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, MOSAICDATA.minDistance, MOSAICDATA.maxDistance)
-  console.log('camera was init')
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1.5*MOSAICDATA.maxDistance)
+  log('camera was init')
   camera.position.set(0, 0, MOSAICDATA.maxDistance)
-  console.log('camera', camera)
+  log('camera', camera)
 
   ambientLight = new THREE.AmbientLight(0x000000) // 0.2
   light = new THREE.DirectionalLight(0xFFFFFF, 1.0)
@@ -120,23 +118,17 @@ function init() {
   window.addEventListener('mousedown', onMouseDown, false)
   window.addEventListener('keydown', onKeyDown, false)
   window.addEventListener('keyup', onKeyUp, false)
-  var el = document.getElementsByTagName("canvas")[0];
-  el.addEventListener("touchstart", touchStart, false);
-
-
-  
+  var el = document.getElementsByTagName("canvas")[0]
+  el.addEventListener("touchstart", touchStart, false)
 
 
   function touchStart(event) {
-    console.log('touch start')
+    log('touch start')
     var x
     var y
 
-
     //todo: zoom in functionaliy in a direction given by position compared to center
     if (is_touch_device()) {
-
-
       x = event.touches[0].clientX;
       y = event.touches[0].clientY;
     }
@@ -147,15 +139,15 @@ function init() {
     zoomXY = { 'x': x, 'y': y }
 
 
-    console.log("X coords: " + x + ", Y coords: " + y)
+    log("X coords: " + x + ", Y coords: " + y)
   }
 
   function touchEnd(event) {
-    console.log('touch end')
+    log('touch end')
 
   }
 
-  console.log(window)
+  log(window)
 
   var textureMap
   var materialColor = new THREE.Color()
@@ -167,36 +159,34 @@ function init() {
   texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
   texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
   wireMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
-  
+
   scene = new THREE.Scene()
   scene.add(light)
-
-    //setupGui()
 }
 
 function getAllJSONData(filename, cb) {
   getJSONData(filename, function (data) {
-    console.log('mosaic data:', data)
+    log('mosaic data:', data)
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
-    console.log('spritemap filename', spriteMapJsonFilename)
+    log('spritemap filename', spriteMapJsonFilename)
     MOSAICDATA.mosaicIndices = data['mosaicIndices']
     MOSAICDATA.mosaicMetadata = data['metadata']
-    console.log('spritemap:', spriteMapJsonFilename)
-    
+    log('spritemap:', spriteMapJsonFilename)
+
     getJSONData(spriteMapJsonFilename, function (spriteData) {
-      console.log('spritemap data:', spriteData)
+      log('spritemap data:', spriteData)
       MOSAICDATA.spritemapMetadata = spriteData['metadata']
       MOSAICDATA.spritemapColordata = './' + MOSAICDATA['mosaicRoot'] + '/' + spriteData['colordata']
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
 
-      console.log('spritemap color data file', MOSAICDATA.spritemapColordata)
-      console.log('applying map:', textureMap)
+      log('spritemap color data file', MOSAICDATA.spritemapColordata)
+      log('applying map:', textureMap)
       texturedMaterial.map = textureMap
 
       textureMap.onload = function () {
-        console.log('image:', textureMap.image)
-        console.log('>>>> LOADED texture')
-        console.log('texturemap:', textureMap)
+        log('image:', textureMap.image)
+        log('>>>> LOADED texture')
+        log('texturemap:', textureMap)
         billboard.material.needsUpdate = true
       }
     })
@@ -204,18 +194,16 @@ function getAllJSONData(filename, cb) {
     MOSAICDATA.indices = data['mosaicIndices']
     MOSAICDATA.metadata = data['metadata']
 
-    var info = document.getElementById('info')
-
+    //var info = document.getElementById('info')
     // info.innerText = MOSAICDATA.mosaicFilename
-    // cb()
   })
 }
 
 function updateButton() {
-  console.log('MOSAICDATA', MOSAICDATA)
+  log('MOSAICDATA', MOSAICDATA)
 
   if (MOSAICDATA['mosaicMetadata'] != undefined) {
-    console.log('updating sprite')
+    log('updating sprite')
     createSprite(MOSAICDATA.indices,
       MOSAICDATA['mosaicMetadata'],
       MOSAICDATA['spritemapMetadata'])
@@ -284,7 +272,7 @@ function onKeyDown(e) {
   keyIsUp = false
 
   // note: we we switch direction quicker than the repetition speed, we will see this in the movement of the camera
-  // console.log('key pressed', e.keyCode)
+  // log('key pressed', e.keyCode)
 
   movement = 1
   switch (e.keyCode) {
@@ -335,72 +323,10 @@ function onWindowResize() {
 
   render()
 }
-
-function setupGui() {
-  effectController = {
-    shininess: 40.0,
-    ka: 0.17,
-    kd: 0.51,
-    ks: 0.2,
-    metallic: true,
-
-    hue: 0.0,
-    saturation: 1.0,
-    lightness: 1.0,
-
-    lhue: 0.04,
-    lsaturation: 0.01, // non-zero so that fractions will be shown
-    llightness: 1.0,
-
-    // bizarrely, if you initialize these with negative numbers, the sliders
-    // will not show any decimal places.
-    lx: 0.32,
-    ly: 0.39,
-    lz: 0.7,
-    newShading: 'textured'
-  }
-
-  var h
-  var gui = new dat.GUI()
-
-  // shading
-  h = gui.add(effectController, 'newShading', ['wireframe', 'textured']).name('Shading').onChange(render)
-}
-
-//
 function render() {
 
   shading = 'textured'
-/*
-  if (effectController.nonblinn !== bNonBlinn ||
-    effectController.newShading !== shading) {
-    bNonBlinn = effectController.nonblinn
-    shading = effectController.newShading
-  }
-*/
-
-  /*
-  diffuseColor.setHSL(effectController.hue, effectController.saturation, effectController.lightness)
-  if (effectController.metallic) {
-    // make colors match to give a more metallic look
-    specularColor.copy(diffuseColor)
-  } else {
-    // more of a plastic look
-    specularColor.setRGB(1, 1, 1)
-  }
-
-  light.position.set(effectController.lx, effectController.ly, effectController.lz)
-  light.color.setHSL(effectController.lhue, effectController.lsaturation, effectController.llightness)
-
-  // skybox is rendered separately, so that it is always behind the teapot.
-  if (shading === 'reflective') {
-    scene.background = textureCube
-  } else {
-    scene.background = new THREE.Color(0, 0, 0)
-  }
-  */
   scene.background = new THREE.Color(0, 0, 0)
-  //  console.log("noticed a change, shading=", shading)
   renderer.render(scene, camera)
 }
 
@@ -417,16 +343,13 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   var tilesX = mosaicmetadata['columns']
   var tilesY = mosaicmetadata['rows']
   var maxDim = Math.max(tilesX, tilesY)
-
-  MOSAICDATA.maxDistance = maxDim
-
-  // values should be normalized 
   var mosaicRatio = tilesX / tilesY
+  var spriteRatio = tilesXsprite / tilesYsprite
+
   if (mosaicRatio > 1.0) {
     mosaicRatio = 1 / mosaicRatio
   }
-
-  var spriteRatio = tilesXsprite / tilesYsprite
+  
   if (spriteRatio > 1.0) {
     spriteRatio = 1 / spriteRatio
   }
@@ -451,17 +374,16 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
 
     // coordinates are row-major, so they should be row major in mosaic data layout
 
-    var tmp = i / 2
-
+    var tmp = i/2
     j = indices[tmp] - 1
 
     // xx <- [0, tilesXsprite-1]
     var xx = j % tilesXsprite
-    var yy = Math.floor(j / tilesXsprite) // starting from top of sprite map
-
-    // scale
+    var yy = Math.floor(j / tilesXsprite) // starting from top of the sprite map
+    
     var xs = 1.0 * xx / tilesXsprite
     var ys = 1.0 * yy / tilesYsprite
+
     var xs2 = (xx + 1.0) / tilesXsprite
     var ys2 = (yy + 1.0) / tilesYsprite
 
@@ -482,7 +404,6 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   geometry.uvsNeedUpdate = true
 
   billboard = new THREE.Mesh(geometry, texturedMaterial)
-  //  geometry.uvsNeedUpdate = true
   scene.add(billboard)
 }
 
