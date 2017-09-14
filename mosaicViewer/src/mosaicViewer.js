@@ -23,7 +23,6 @@ var movement = 0 // [0,1]
 var speed = 0.02 // default speed of movement
 var camera, scene, renderer
 var cameraControls
-var ambientLight, light
 var billboard
 
 //todo: read gallery from json 
@@ -69,7 +68,7 @@ function log(str) {
 function init() {
   isTouchDevice = is_touch_device()
   log('touch device?' + isTouchDevice)
-  
+
 
   for (let i = 0; i < buttonNames.length; i++) {
     buttons[i] = document.createElement('BUTTON')
@@ -93,7 +92,7 @@ function init() {
   ambientLight = new THREE.AmbientLight(0x000000) // 0.2
   light = new THREE.DirectionalLight(0xFFFFFF, 1.0)
 
-   renderer = new THREE.WebGLRenderer()
+  renderer = new THREE.WebGLRenderer()
   renderer.setClearColor(0xAAAAAA)
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(canvasWidth, canvasHeight)
@@ -131,25 +130,25 @@ function init() {
     log('touch end')
 
   }
-  
+
   var materialColor = new THREE.Color()
-  texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor})
+  texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor })
   texturedMaterial.generateMipmaps = false
   texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
   texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
 
-texturedMaterial.wrapS = THREE.ClampToEdgeWrapping,
-texturedMaterial.wrapY = THREE.ClampToEdgeWrapping,
+  texturedMaterial.wrapS = THREE.ClampToEdgeWrapping,
+    texturedMaterial.wrapY = THREE.ClampToEdgeWrapping,
 
-scene = new THREE.Scene()
+    scene = new THREE.Scene()
   scene.add(light)
 }
 
 function getAllJSONData(filename, cb) {
   getJSONData(filename, function (data) {
-    
+
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
-    log('spritemap filename: '+ spriteMapJsonFilename)
+    log('spritemap filename: ' + spriteMapJsonFilename)
     MOSAICDATA.mosaicIndices = data['mosaicIndices']
     MOSAICDATA.mosaicMetadata = data['metadata']
     log('spritemap: ' + spriteMapJsonFilename)
@@ -161,13 +160,13 @@ function getAllJSONData(filename, cb) {
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
 
       log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
-    
+
       texturedMaterial.map = textureMap
 
       textureMap.onload = function () {
         log('image:' + textureMap.image)
         log('>>>> LOADED texture')
-    
+
         billboard.material.needsUpdate = true
       }
       updateButton()
@@ -175,7 +174,7 @@ function getAllJSONData(filename, cb) {
 
     MOSAICDATA.indices = data['mosaicIndices']
     MOSAICDATA.metadata = data['metadata']
-    
+
     //var info = document.getElementById('info')
     // info.innerText = MOSAICDATA.mosaicFilename
   })
@@ -369,7 +368,14 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
 
   geometry.uvsNeedUpdate = true
 
+  // remove previously created billboards, if any
+  var billboardName = "billboard"
+  var entity = scene.getObjectByName(billboardName)
+  scene.remove(entity)
+
+  // create and add billboard geometry
   billboard = new THREE.Mesh(geometry, texturedMaterial)
+  billboard.name = billboardName
   scene.add(billboard)
 }
 
