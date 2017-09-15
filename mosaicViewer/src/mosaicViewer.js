@@ -20,7 +20,8 @@ var dxIsCoolingDown = false,
   dyIsCoolingDown = false,
   dzIsCoolingDown = false
 var movement = 0 // [0,1]
-var speed = 0.02 // default speed of movement
+var speed = 0.04 // default speed of movement
+var cooldownSpeed = 0.97
 var camera, scene, renderer
 var cameraControls
 var billboard
@@ -37,8 +38,8 @@ animate()
 
 
 function getCenter() {
-  var x = document.documentElement.clientWidth / 2
-  var y = document.documentElement.clientHeight / 2
+  var x = document.documentElement.clientWidth * 0.5
+  var y = document.documentElement.clientHeight * 0.5
   var center = new THREE.Vector2(x, y)
 
   return center
@@ -68,9 +69,17 @@ function is_touch_device() {
   }
 }
 
+function touchMove(event) {
+  var nFingers = event.touches.length
+  updateMovementDirection(nFingers)
+}
 
-//start movement
-function touchStart(event) {
+function updateMovementDirection(nFingers) {
+
+  console.log("fingers:" + nFingers)
+
+  if (nFingers===2)
+    dzSpeed = 1
 
   var center = getCenter()
   var x
@@ -90,14 +99,30 @@ function touchStart(event) {
     y = event.pageY
   }
 
-
   var point = new THREE.Vector2(x, y)
   var dir = new THREE.Vector2()
-  dir.subVectors(point, center).normalize()
+  dir.subVectors(point, center)
+  var distance = Math.sqrt(dir.x * dir.x + dir.y * dir.y)
 
-  dx = dir.x / 10
+  dir = dir.normalize()
+  var w = document.documentElement.clientWidth * 0.5
+  var h = document.documentElement.clientHeight * 0.5
+
+  var distanceMax = Math.sqrt(w * w + h * h)
+
+  distance = distance / distanceMax
+  dx = dir.x
   dir.y = -dir.y
-  dy = dir.y / 10
+  dy = dir.y
+  dx = dir.x
+
+  dx = Math.sign(dx) * Math.pow(dx, 2) * distance
+  dy = Math.sign(dy) * Math.pow(dy, 2) * distance
+
+  if (distance < 0.1) {
+    dx = 0
+    dy = 0
+  }
 
   dxSpeed = dx
   dySpeed = dy
@@ -105,15 +130,23 @@ function touchStart(event) {
   dz = -1
   dzSpeed = dz
   movement = 1
+}
 
+//start movement
+function touchStart(event) {
+  updateMovementDirection()
 }
 
 function touchEnd(event) {
-  log('touch end, stopping dx,dy,dz')
+
   dx = 0
   dy = 0
   dz = 0
   zooming = false
+  dxIsCoolingDown = true
+  dyIsCoolingDown = true
+  dzIsCoolingDown = true
+
 }
 
 function log(str) {
@@ -163,6 +196,8 @@ function init() {
   window.addEventListener('keyup', onKeyUp, false)
   var el = document.getElementsByTagName("canvas")[0]
   el.addEventListener("touchstart", touchStart, false)
+  el.addEventListener("touchend", touchEnd, false)
+  el.addEventListener("touchmove", touchMove, false);
 
 
   var materialColor = new THREE.Color()
@@ -171,10 +206,10 @@ function init() {
   texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
   texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
 
-  texturedMaterial.wrapS = THREE.ClampToEdgeWrapping,
-    texturedMaterial.wrapY = THREE.ClampToEdgeWrapping,
+  texturedMaterial.wrapS = THREE.ClampToEdgeWrapping
+  texturedMaterial.wrapY = THREE.ClampToEdgeWrapping
 
-    scene = new THREE.Scene()
+  scene = new THREE.Scene()
   scene.add(light)
 }
 
@@ -423,13 +458,13 @@ function onMouseUp() {
 
 function animate() {
   if (dxIsCoolingDown && Math.abs(dxSpeed) > 0) {
-    dxSpeed *= 0.8
+    dxSpeed *= cooldownSpeed
   }
   if (dyIsCoolingDown && Math.abs(dySpeed) > 0) {
-    dySpeed *= 0.8
+    dySpeed *= cooldownSpeed
   }
   if (dzIsCoolingDown && Math.abs(dzSpeed) > 0) {
-    dzSpeed *= 0.8
+    dzSpeed *= cooldownSpeed
   }
 
   if (Math.abs(dxSpeed) < 0.001) {
@@ -441,10 +476,6 @@ function animate() {
   if (Math.abs(dzSpeed) < 0.001) {
     dzSpeed = 0
   }
-
-  //  if (zooming)
-  //move the camera closer to center and z
-
 
   if (camera.position) {
     camera.position.x += speed * movement * dx + speed * movement * dxSpeed
