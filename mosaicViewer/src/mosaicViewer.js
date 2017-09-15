@@ -24,6 +24,7 @@ var speed = 0.02 // default speed of movement
 var camera, scene, renderer
 var cameraControls
 var billboard
+var zooming = false
 
 //todo: read gallery from json 
 var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
@@ -33,6 +34,15 @@ var buttons = []
 init()
 render()
 animate()
+
+
+function getCenter() {
+  var x = document.documentElement.clientWidth / 2
+  var y = document.documentElement.clientHeight / 2
+  var center = new THREE.Vector2(x, y)
+
+  return center
+}
 
 function getJSONData(filename, cb) {
   var client = new window.XMLHttpRequest()
@@ -58,6 +68,54 @@ function is_touch_device() {
   }
 }
 
+
+//start movement
+function touchStart(event) {
+
+  var center = getCenter()
+  var x
+  var y
+
+  dxSpeed = 0
+  dySpeed = 0
+  dzSpeed = 0
+  zooming = true
+
+  if (is_touch_device()) {
+    x = event.touches[0].clientX;
+    y = event.touches[0].clientY;
+  }
+  else {
+    x = event.pageX
+    y = event.pageY
+  }
+
+
+  var point = new THREE.Vector2(x, y)
+  var dir = new THREE.Vector2()
+  dir.subVectors(point, center).normalize()
+
+  dx = dir.x / 10
+  dir.y = -dir.y
+  dy = dir.y / 10
+
+  dxSpeed = dx
+  dySpeed = dy
+
+  dz = -1
+  dzSpeed = dz
+  movement = 1
+
+}
+
+function touchEnd(event) {
+  log('touch end, stopping dx,dy,dz')
+  dx = 0
+  dy = 0
+  dz = 0
+  zooming = false
+}
+
 function log(str) {
   if (DEBUG) {
     console.log(str)
@@ -68,7 +126,6 @@ function log(str) {
 function init() {
   isTouchDevice = is_touch_device()
   log('touch device?' + isTouchDevice)
-
 
   for (let i = 0; i < buttonNames.length; i++) {
     buttons[i] = document.createElement('BUTTON')
@@ -107,29 +164,6 @@ function init() {
   var el = document.getElementsByTagName("canvas")[0]
   el.addEventListener("touchstart", touchStart, false)
 
-
-  function touchStart(event) {
-    log('touch start')
-    var x
-    var y
-
-    //todo: zoom in functionaliy in a direction given by position compared to center
-    if (is_touch_device()) {
-      x = event.touches[0].clientX;
-      y = event.touches[0].clientY;
-    }
-    else {
-      x = event.pageX
-      y = event.pageY
-    }
-    zoomXY = { 'x': x, 'y': y }
-    log("X coords: " + x + ", Y coords: " + y)
-  }
-
-  function touchEnd(event) {
-    log('touch end')
-
-  }
 
   var materialColor = new THREE.Color()
   texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor })
@@ -407,6 +441,10 @@ function animate() {
   if (Math.abs(dzSpeed) < 0.001) {
     dzSpeed = 0
   }
+
+  //  if (zooming)
+  //move the camera closer to center and z
+
 
   if (camera.position) {
     camera.position.x += speed * movement * dx + speed * movement * dxSpeed
