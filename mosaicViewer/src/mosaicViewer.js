@@ -6,7 +6,8 @@ var MOSAICDATA = {
   'minDistance': 0.004,
   'maxDistance': 200,
   'mosaicFilename': '',
-  'mosaicRoot': 'gallery'
+  'mosaicRoot': 'gallery',
+  'loadingSplash': './icons/loadingText.png'
 }
 
 var isTouchDevice = false
@@ -24,7 +25,10 @@ var speedFactor = 40 // default speed of movement
 var cooldownSpeed = 0.97
 var camera, scene, renderer
 var cameraControls
-var billboard
+var billboard = new THREE.PlaneGeometry()
+var loading //used to show a loading animation
+var loader = { 'mesh': new THREE.Mesh(), 'activated': true }
+
 
 
 //todo: read gallery from json 
@@ -69,7 +73,6 @@ function getJSONData(filename, cb) {
   client.send()
 }
 
-
 function is_touch_device() {
   try {
     document.createEvent('TouchEvent');
@@ -79,7 +82,6 @@ function is_touch_device() {
   }
 }
 
-
 function touchMove(event) {
   event.preventDefault() // prevents scrolling
 
@@ -88,12 +90,10 @@ function touchMove(event) {
 }
 
 function updateMovementDirection(nFingers) {
-
   var debug = document.getElementById('info')
   var debugTextNode = debug.childNodes[0]
 
   if (DEBUG) {
-
     debugTextNode.nodeValue = 'fingers used: ' + nFingers + " ok"
   }
 
@@ -134,7 +134,6 @@ function updateMovementDirection(nFingers) {
     y = event.pageY
   }
 
-
   var point = new THREE.Vector2(x, y)
   var dir = new THREE.Vector2()
   dir.subVectors(point, center)
@@ -143,7 +142,6 @@ function updateMovementDirection(nFingers) {
   dir = dir.normalize()
   var w = document.documentElement.clientWidth * 0.5
   var h = document.documentElement.clientHeight * 0.5
-
   var distanceMax = Math.sqrt(w * w + h * h)
 
   distance = distance / distanceMax
@@ -162,7 +160,6 @@ function updateMovementDirection(nFingers) {
 
   dxSpeed = dx
   dySpeed = dy
-
   dz = -1
   dzSpeed = dz
   movement = 1
@@ -213,8 +210,6 @@ function init() {
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1.1 * MOSAICDATA.maxDistance)
   log('camera was init')
   camera.position.set(0, 0, MOSAICDATA.maxDistance)
-  ambientLight = new THREE.AmbientLight(0x000000) // 0.2
-  light = new THREE.DirectionalLight(0xFFFFFF, 1.0)
 
   renderer = new THREE.WebGLRenderer()
   renderer.setClearColor(0xAAAAAA)
@@ -233,24 +228,23 @@ function init() {
   canvas.addEventListener("touchend", touchEnd, false)
   canvas.addEventListener("touchmove", touchMove, false);
 
+  /*
+  loader.mesh.geometry.z = 1
+  loader.mesh.name = 'load'
+  loader.mesh = new THREE.Mesh(new THREE.PlaneGeometry(100,100,1,1), new THREE.MeshBasicMaterial())
+  loader.mesh.material =new THREE.TextureLoader().load(MOSAICDATA.loadingSplash)
+  loader.mesh.material.needsUpdate = true
+  */
 
   var materialColor = new THREE.Color()
-  texturedMaterial = new THREE.MeshBasicMaterial({ color: materialColor })
-  texturedMaterial.generateMipmaps = false
-  texturedMaterial.magFilter = THREE.LinearMipMapLinearFilter
-  texturedMaterial.minFilter = THREE.LinearMipMapLinearFilter
-
-  texturedMaterial.wrapS = THREE.ClampToEdgeWrapping
-  texturedMaterial.wrapY = THREE.ClampToEdgeWrapping
-
+  billboard.material = new THREE.MeshBasicMaterial({ color: materialColor })
   scene = new THREE.Scene()
-  scene.add(light)
+  scene.add(loader.mesh)
 }
 
 function getAllJSONData(filename, cb) {
   loadingStart()
   getJSONData(filename, function (data) {
-
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
     log('spritemap filename: ' + spriteMapJsonFilename)
     MOSAICDATA.mosaicIndices = data['mosaicIndices']
@@ -264,8 +258,8 @@ function getAllJSONData(filename, cb) {
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
 
       log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
-      texturedMaterial.map = textureMap
-
+      billboard.material = new THREE.MeshBasicMaterial()
+      billboard.material.map = textureMap
       textureMap.onload = function () {
         log('image:' + textureMap.image)
         log('>>>> LOADED texture')
@@ -277,9 +271,6 @@ function getAllJSONData(filename, cb) {
 
     MOSAICDATA.indices = data['mosaicIndices']
     MOSAICDATA.metadata = data['metadata']
-
-    //var info = document.getElementById('info')
-    // info.innerText = MOSAICDATA.mosaicFilename
   })
 }
 
@@ -287,15 +278,23 @@ function updateButton() {
   log('MOSAICDATA ' + MOSAICDATA)
 
   if (MOSAICDATA['mosaicMetadata'] != undefined) {
-    createSprite(MOSAICDATA.indices,
+    var billboard = createSprite(MOSAICDATA.indices,
       MOSAICDATA['mosaicMetadata'],
       MOSAICDATA['spritemapMetadata'])
-    billboard.material.needsUpdate = true;
+    billboard.material.needsUpdate = true
+
+    // remove previously created billboards, if any
+    var billboardName = "billboard"
+    var entity = scene.getObjectByName(billboardName)
+    scene.remove(entity)
+    // create and add billboard geometry
+    billboard.name = billboardName
+    scene.add(billboard)
   }
 }
 
 function onKeyUp(e) {
-    switch (e.keyCode) {
+  switch (e.keyCode) {
     case 65: // A
       dxSpeed = dx
       dxIsCoolingDown = true
@@ -390,7 +389,6 @@ function onWindowResize() {
   renderer.setSize(canvasWidth, canvasHeight)
   camera.aspect = canvasWidth / canvasHeight
   camera.updateProjectionMatrix()
-
   render()
 }
 
@@ -399,7 +397,6 @@ function render() {
   scene.background = new THREE.Color(0, 0, 0)
   renderer.render(scene, camera)
 }
-
 
 /* Create a plane with UV coordinates pointing into a <spritemap> using the mosaic <indices> matrix. */
 function createSprite(indices, mosaicmetadata, spritemapmetadata) {
@@ -425,7 +422,6 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   var geometry = new THREE.PlaneGeometry(tilesX, ratio * tilesY, tilesX, tilesY)
   var j = 1
   for (var i = 0; i < 2 * tilesX * tilesY; i += 2) {
-
     /**
      * Quad coordinates (q1-q4):
      * (1)----(4)
@@ -469,15 +465,9 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
 
   geometry.uvsNeedUpdate = true
 
-  // remove previously created billboards, if any
-  var billboardName = "billboard"
-  var entity = scene.getObjectByName(billboardName)
-  scene.remove(entity)
+  billboard = new THREE.Mesh(geometry, billboard.material)
 
-  // create and add billboard geometry
-  billboard = new THREE.Mesh(geometry, texturedMaterial)
-  billboard.name = billboardName
-  scene.add(billboard)
+  return billboard
 }
 
 function onMouseDown() {
@@ -489,6 +479,12 @@ function onMouseUp() {
 }
 
 function animate() {
+
+  if (loading) {
+
+    //show 'loading' sprite 
+  }
+
   if (dxIsCoolingDown && Math.abs(dxSpeed) > 0) {
     dxSpeed *= cooldownSpeed
   }
@@ -514,7 +510,6 @@ function animate() {
     camera.position.x += speed * movement * dx + speed * movement * dxSpeed
     camera.position.y += speed * movement * dy + speed * movement * dySpeed
     camera.position.z += speed * movement * dz + speed * movement * dzSpeed
-
 
     if (camera.position.z < MOSAICDATA.minDistance) {
       camera.position.z = MOSAICDATA.minDistance
