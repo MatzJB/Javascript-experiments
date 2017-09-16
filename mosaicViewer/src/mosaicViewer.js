@@ -20,12 +20,12 @@ var dxIsCoolingDown = false,
   dyIsCoolingDown = false,
   dzIsCoolingDown = false
 var movement = 0 // [0,1]
-var speed = 0.04 // default speed of movement
+var speedFactor = 40 // default speed of movement
 var cooldownSpeed = 0.97
 var camera, scene, renderer
 var cameraControls
 var billboard
-var zooming = false
+
 
 //todo: read gallery from json 
 var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
@@ -36,6 +36,16 @@ init()
 render()
 animate()
 
+function loadingStart() {
+  /*
+    var canvas = document.getElementsByTagName("canvas")[0]
+    console.log("canvas:", canvas)  
+  
+    var context = canvas.getContext('2d');
+    var x = canvas.width / 2;
+    var y = canvas.height / 2;
+  */
+}
 
 function getCenter() {
   var x = document.documentElement.clientWidth * 0.5
@@ -62,24 +72,50 @@ function getJSONData(filename, cb) {
 
 function is_touch_device() {
   try {
-    document.createEvent("TouchEvent");
+    document.createEvent('TouchEvent');
     return true;
   } catch (e) {
     return false;
   }
 }
 
+
 function touchMove(event) {
+  event.preventDefault() // prevents scrolling
+
   var nFingers = event.touches.length
   updateMovementDirection(nFingers)
 }
 
 function updateMovementDirection(nFingers) {
 
-  console.log("fingers:" + nFingers)
+  var debug = document.getElementById('info')
+  var debugTextNode = debug.childNodes[0]
 
-  if (nFingers===2)
-    dzSpeed = 1
+  if (DEBUG) {
+
+    debugTextNode.nodeValue = 'fingers used: ' + nFingers + " ok"
+  }
+
+  // zoom out
+  if (nFingers === 2) {
+    dzSpeed = 5
+    movement = 1
+
+    if (DEBUG)
+      debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(zooming out)'
+    return
+  }
+
+  // reset
+  if (nFingers === 3) {
+    dzSpeed = 2
+    camera.position.set(0, 0, MOSAICDATA.maxDistance)
+    movement = 0
+    if (DEBUG)
+      debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(reset zoom)'
+    return
+  }
 
   var center = getCenter()
   var x
@@ -88,7 +124,6 @@ function updateMovementDirection(nFingers) {
   dxSpeed = 0
   dySpeed = 0
   dzSpeed = 0
-  zooming = true
 
   if (is_touch_device()) {
     x = event.touches[0].clientX;
@@ -98,6 +133,7 @@ function updateMovementDirection(nFingers) {
     x = event.pageX
     y = event.pageY
   }
+
 
   var point = new THREE.Vector2(x, y)
   var dir = new THREE.Vector2()
@@ -134,25 +170,23 @@ function updateMovementDirection(nFingers) {
 
 //start movement
 function touchStart(event) {
-  updateMovementDirection()
+  event.preventDefault()
+  var nFingers = event.touches.length
+  updateMovementDirection(nFingers)
 }
 
 function touchEnd(event) {
-
   dx = 0
   dy = 0
   dz = 0
-  zooming = false
   dxIsCoolingDown = true
   dyIsCoolingDown = true
   dzIsCoolingDown = true
-
 }
 
 function log(str) {
   if (DEBUG) {
     console.log(str)
-
   }
 }
 
@@ -194,10 +228,10 @@ function init() {
   window.addEventListener('mousedown', onMouseDown, false)
   window.addEventListener('keydown', onKeyDown, false)
   window.addEventListener('keyup', onKeyUp, false)
-  var el = document.getElementsByTagName("canvas")[0]
-  el.addEventListener("touchstart", touchStart, false)
-  el.addEventListener("touchend", touchEnd, false)
-  el.addEventListener("touchmove", touchMove, false);
+  var canvas = document.getElementsByTagName("canvas")[0]
+  canvas.addEventListener("touchstart", touchStart, false)
+  canvas.addEventListener("touchend", touchEnd, false)
+  canvas.addEventListener("touchmove", touchMove, false);
 
 
   var materialColor = new THREE.Color()
@@ -214,6 +248,7 @@ function init() {
 }
 
 function getAllJSONData(filename, cb) {
+  loadingStart()
   getJSONData(filename, function (data) {
 
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
@@ -229,7 +264,6 @@ function getAllJSONData(filename, cb) {
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
 
       log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
-
       texturedMaterial.map = textureMap
 
       textureMap.onload = function () {
@@ -261,9 +295,7 @@ function updateButton() {
 }
 
 function onKeyUp(e) {
-  // keyIsUp = true
-
-  switch (e.keyCode) {
+    switch (e.keyCode) {
     case 65: // A
       dxSpeed = dx
       dxIsCoolingDown = true
@@ -478,10 +510,11 @@ function animate() {
   }
 
   if (camera.position) {
+    speed = speedFactor * Math.log10(1 + 0.1 * Math.abs(camera.position.z / MOSAICDATA.maxDistance))
     camera.position.x += speed * movement * dx + speed * movement * dxSpeed
     camera.position.y += speed * movement * dy + speed * movement * dySpeed
     camera.position.z += speed * movement * dz + speed * movement * dzSpeed
-    speed = 20 * Math.log10(1 + 0.1 * Math.abs(camera.position.z / MOSAICDATA.maxDistance))
+
 
     if (camera.position.z < MOSAICDATA.minDistance) {
       camera.position.z = MOSAICDATA.minDistance
