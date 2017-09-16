@@ -16,6 +16,12 @@
 			background-color: #000;
 			margin: 0px;
 			overflow: hidden;
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-khtml-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
 		}
 
 		#info {
@@ -30,15 +36,20 @@
 			color: blue;
 		}
 	</style>
-
 </head>
 
 <body id="body">
 	<div id="info">
+		On a PC: zoom in = e, zoom out = f, reset zoom = z <br> On a smart device: zoom in = touch (and hold), zoom out=two fingers,
+		reset zoom=three fingers <br>
+		<br>
+		<div id="debug">
+		</div>
 	</div>
-	<script src="build/three.js"></script>
-	<script src="js/controls/OrbitControls.js"></script>
-	<script src="js/Detector.js"></script>
+
+	<script src="./build/three.js"></script>
+	<script src="./js/controls/OrbitControls.js"></script>
+	<script src="./js/Detector.js"></script>
 	<script src='mosaicViewer.js'>
 
 	</script>
