@@ -73,7 +73,7 @@ function getJSONData(filename, cb) {
   client.send()
 }
 
-function is_touch_device() {
+function _isTouchDevice() {
   try {
     document.createEvent('TouchEvent');
     return true;
@@ -84,10 +84,7 @@ function is_touch_device() {
 
 function onMouseDown(event) {
   mousePressed = true
-  if (event.which === 1)
-    updateMovementDirection(1)
-  if (event.which === 3)
-    updateMovementDirection(2)
+  updateMovementDirection(event)
 }
 
 function onMouseUp(event) {
@@ -102,13 +99,10 @@ function onMouseMove(event) {
 
 function touchMove(event) {
   event.preventDefault() // prevents scrolling
-  var nFingers = 0
-  if (event.touches)
-    nFingers = event.touches.length
-  updateMovementDirection(nFingers)
+  updateMovementDirection(event)
 }
 
-function updateMovementDirection(nFingers) {
+function updateMovementDirection(event) {
   var debug = document.getElementById('info')
   var debugTextNode = debug.childNodes[0]
 
@@ -116,8 +110,14 @@ function updateMovementDirection(nFingers) {
     debugTextNode.nodeValue = 'fingers used: ' + nFingers + " ok"
   }
 
+  var nFingers = 0
+  if (event.touches)
+    nFingers = event.touches.length
+  else
+    nFingers = event.which
+
   // zoom out
-  if (nFingers === 2) {
+  if (nFingers === 3) {
     dzSpeed = 5
     movement = 1
 
@@ -127,7 +127,7 @@ function updateMovementDirection(nFingers) {
   }
 
   // reset
-  if (nFingers === 3) {
+  if (nFingers === 2) {
     dzSpeed = 2
     camera.position.set(0, 0, MOSAICDATA.maxDistance)
     movement = 0
@@ -144,7 +144,7 @@ function updateMovementDirection(nFingers) {
   dySpeed = 0
   dzSpeed = 0
 
-  if (is_touch_device()) {
+  if (event.touches) {
     x = event.touches[0].clientX;
     y = event.touches[0].clientY;
   }
@@ -186,10 +186,9 @@ function updateMovementDirection(nFingers) {
 
 //start movement
 function touchStart(event) {
-  //loader.mesh.material.needsUpdate = true //test
   event.preventDefault()
-  var nFingers = event.touches.length
-  updateMovementDirection(nFingers)
+
+  updateMovementDirection(event)
 }
 
 function touchEnd(event) {
@@ -208,7 +207,7 @@ function log(str) {
 }
 
 function init() {
-  isTouchDevice = is_touch_device()
+  isTouchDevice = _isTouchDevice()
   log('touch device?' + isTouchDevice)
 
   for (let i = 0; i < buttonNames.length; i++) {
