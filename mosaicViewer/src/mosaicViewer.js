@@ -28,7 +28,7 @@ var cameraControls
 var billboard = new THREE.PlaneGeometry()
 var loading //used to show a loading animation
 var loader = { 'mesh': new THREE.Mesh(), 'activated': true }
-
+var mousePressed = false
 
 
 //todo: read gallery from json 
@@ -82,10 +82,29 @@ function is_touch_device() {
   }
 }
 
+function onMouseDown(event) {
+  mousePressed = true
+  if (event.which === 1)
+    updateMovementDirection(1)
+  if (event.which === 3)
+    updateMovementDirection(2)
+}
+
+function onMouseUp(event) {
+  mousePressed = false
+  touchEnd(event)
+}
+
+function onMouseMove(event) {
+  if (mousePressed)
+    touchMove(event)
+}
+
 function touchMove(event) {
   event.preventDefault() // prevents scrolling
-
-  var nFingers = event.touches.length
+  var nFingers = 0
+  if (event.touches)
+    nFingers = event.touches.length
   updateMovementDirection(nFingers)
 }
 
@@ -167,6 +186,7 @@ function updateMovementDirection(nFingers) {
 
 //start movement
 function touchStart(event) {
+  //loader.mesh.material.needsUpdate = true //test
   event.preventDefault()
   var nFingers = event.touches.length
   updateMovementDirection(nFingers)
@@ -219,27 +239,33 @@ function init() {
   renderer.gammaOutput = true
   container.appendChild(renderer.domElement)
 
-  window.addEventListener('resize', onWindowResize, false)
-  window.addEventListener('mousedown', onMouseDown, false)
   window.addEventListener('keydown', onKeyDown, false)
   window.addEventListener('keyup', onKeyUp, false)
+
   var canvas = document.getElementsByTagName("canvas")[0]
+  canvas.addEventListener('mousedown', onMouseDown, false)
+  canvas.addEventListener('mouseup', onMouseUp, false)
+  canvas.addEventListener('mousemove', onMouseMove, false)
   canvas.addEventListener("touchstart", touchStart, false)
   canvas.addEventListener("touchend", touchEnd, false)
   canvas.addEventListener("touchmove", touchMove, false);
+  canvas.addEventListener('contextmenu', function (ev) {
+    ev.preventDefault()
+    return false
+  }, false)
 
-  /*
-  loader.mesh.geometry.z = 1
+  // Test
+  loader.mesh.geometry.z = 10
   loader.mesh.name = 'load'
-  loader.mesh = new THREE.Mesh(new THREE.PlaneGeometry(100,100,1,1), new THREE.MeshBasicMaterial())
-  loader.mesh.material =new THREE.TextureLoader().load(MOSAICDATA.loadingSplash)
-  loader.mesh.material.needsUpdate = true
-  */
+  loader.mesh = new THREE.Mesh(new THREE.PlaneGeometry(500, 500, 1, 1), new THREE.MeshBasicMaterial())
+  loader.mesh.material = new THREE.TextureLoader().load(MOSAICDATA.loadingSplash)
+  loader.mesh.materialColor = new THREE.Color(255, 0, 0)
 
   var materialColor = new THREE.Color()
   billboard.material = new THREE.MeshBasicMaterial({ color: materialColor })
   scene = new THREE.Scene()
   scene.add(loader.mesh)
+  loader.mesh.material.needsUpdate = true
 }
 
 function getAllJSONData(filename, cb) {
@@ -325,6 +351,12 @@ function onKeyUp(e) {
       dzIsCoolingDown = true
       dz = 0
       break
+    case 90: // z
+      dzIsCoolingDown = true
+      dzspeed = 0
+      dz = 0
+      movement = 0
+      break
   }
 
   if (dx === 0 && dy === 0 && dz === 0) {
@@ -376,8 +408,8 @@ function onKeyDown(e) {
       dzSpeed = dz
       dzIsCoolingDown = false
       break
-
     case 90: // z
+
       camera.position.set(0, 0, MOSAICDATA.maxDistance)
       break
   }
@@ -393,7 +425,6 @@ function onWindowResize() {
 }
 
 function render() {
-  shading = 'textured'
   scene.background = new THREE.Color(0, 0, 0)
   renderer.render(scene, camera)
 }
@@ -470,13 +501,6 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   return billboard
 }
 
-function onMouseDown() {
-  mousePressed = true
-}
-
-function onMouseUp() {
-  mousePressed = false
-}
 
 function animate() {
 
