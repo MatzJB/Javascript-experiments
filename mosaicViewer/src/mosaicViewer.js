@@ -169,8 +169,8 @@ function updateMovementDirection(event) {
   dy = dir.y
   dx = dir.x
 
-  dx = Math.sign(dx) * Math.pow(dx, 2) * distance
-  dy = Math.sign(dy) * Math.pow(dy, 2) * distance
+  dx = Math.sign(dx) * Math.pow(dx, 2) * distance*2
+  dy = Math.sign(dy) * Math.pow(dy, 2) * distance*2
 
   if (distance < 0.1) {
     dx = 0
@@ -281,6 +281,8 @@ function getAllJSONData(filename, cb) {
       MOSAICDATA.spritemapMetadata = spriteData['metadata']
       MOSAICDATA.spritemapColordata = './' + MOSAICDATA['mosaicRoot'] + '/' + spriteData['colordata']
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
+      textureMap.magFilter = THREE.NearestFilter;
+      textureMap.minFilter = THREE.LinearMipMapLinearFilter;
 
       log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
       billboard.material = new THREE.MeshBasicMaterial()
