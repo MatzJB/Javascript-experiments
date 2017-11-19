@@ -32,8 +32,13 @@ var mousePressed = false
 
 
 //todo: read gallery from json 
-var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
-  'pig', 'the kiss', 'Trump', 'colette', 'gargantua', 'helpinghand', 'rainbow', 'jobs', 'chess']
+/*var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
+  'pig', 'the kiss', 'Trump', 'colette', 'gargantua', 'helpinghand', 'rainbow', 'jobs', 'chess',
+  'plumber Mario', 'women kranium', 'Inna', 'liberty', 'queen']
+*/
+
+var buttonNames = ['Tangled', 'Trump']
+
 var buttons = []
 
 init()
@@ -41,14 +46,16 @@ render()
 animate()
 
 function loadingStart() {
-  /*
-    var canvas = document.getElementsByTagName("canvas")[0]
-    console.log("canvas:", canvas)  
-  
-    var context = canvas.getContext('2d');
-    var x = canvas.width / 2;
-    var y = canvas.height / 2;
-  */
+
+  var canvas = document.getElementsByTagName("canvas")[0]
+  console.log("canvas:", canvas)
+
+  var context = canvas.getContext('2d');
+  var x = canvas.width / 2;
+  var y = canvas.height / 2;
+
+
+
 }
 
 function getCenter() {
@@ -169,8 +176,8 @@ function updateMovementDirection(event) {
   dy = dir.y
   dx = dir.x
 
-  dx = Math.sign(dx) * Math.pow(dx, 2) * distance*2
-  dy = Math.sign(dy) * Math.pow(dy, 2) * distance*2
+  dx = Math.sign(dx) * Math.pow(dx, 2) * distance * 2
+  dy = Math.sign(dy) * Math.pow(dy, 2) * distance * 2
 
   if (distance < 0.1) {
     dx = 0
@@ -188,7 +195,7 @@ function updateMovementDirection(event) {
 function touchStart(event) {
   event.preventDefault()
 
-  updateMovementDirection(event)
+  //updateMovementDirection(event)
 }
 
 function touchEnd(event) {
@@ -236,6 +243,7 @@ function init() {
   renderer.setSize(canvasWidth, canvasHeight)
   renderer.gammaInput = true
   renderer.gammaOutput = true
+  renderer.antialias = true //new
   container.appendChild(renderer.domElement)
 
   window.addEventListener('keydown', onKeyDown, false)
@@ -261,7 +269,8 @@ function init() {
   loader.mesh.materialColor = new THREE.Color(255, 0, 0)
 
   var materialColor = new THREE.Color()
-  billboard.material = new THREE.MeshBasicMaterial({ color: materialColor })
+ 
+
   scene = new THREE.Scene()
   scene.add(loader.mesh)
   loader.mesh.material.needsUpdate = true
@@ -282,14 +291,42 @@ function getAllJSONData(filename, cb) {
       MOSAICDATA.spritemapColordata = './' + MOSAICDATA['mosaicRoot'] + '/' + spriteData['colordata']
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
       textureMap.magFilter = THREE.NearestFilter;
-      textureMap.minFilter = THREE.LinearMipMapLinearFilter;
-
+      textureMap.minFilter = THREE.NearestFilter;
+      //textureMap.minFilter = THREE.LinearMipMapLinearFilter;
+      console.log('textureMap', textureMap)
       log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
-      billboard.material = new THREE.MeshBasicMaterial()
-      billboard.material.map = textureMap
+
+      //billboard.material = new THREE.MeshBasicMaterial()
+
+      // texture shader
+      //console.log('vertex shader:', document.getElementById('vertexShader'))
+      
+ 
+      //console.log('updated billboard with uniforms')
+      //billboard.material.map = textureMap
+
+      //billboard.material.map = textureMap
       textureMap.onload = function () {
         log('image:' + textureMap.image)
         log('>>>> LOADED texture')
+        console.log("texture", textureMap)
+/*
+     var uniforms = {
+        texture: { type: 't', value: 0, texture: textureMap }
+      }
+
+      var mat = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: document.getElementById('vertexShader').text,
+        fragmentShader: document.getElementById('fragmentShader').text
+      })
+
+      mat.uniforms.textureSampler.value = textureMap
+
+      billboard.material = mat
+*/
+billboard.material = new THREE.MeshBasicMaterial({ color: materialColor })
+billboard.material.map = textureMap
 
         billboard.material.needsUpdate = true
       }
@@ -502,6 +539,11 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   return billboard
 }
 
+function createLoaderMesh() {
+  var geometry = new THREE.PlaneGeometry(1, 1, 1, 1)
+  loader = new THREE.Mesh(geometry, loader.material)
+  return loader
+}
 
 function animate() {
 
@@ -536,6 +578,15 @@ function animate() {
     camera.position.y += speed * movement * dy + speed * movement * dySpeed
     camera.position.z += speed * movement * dz + speed * movement * dzSpeed
 
+    if (billboard.material) {
+
+//      billboard.material.uniforms.distance = camera.position.z / MOSAICDATA.maxDistance
+  //    billboard.material.uniforms.distance.needsUpdate = true
+      //console.log('distance:', billboard.material.uniforms)
+      //billboard.material.uniforms.translation = camera.position
+
+      //console.log('distance:', camera.position.z)
+    }
     if (camera.position.z < MOSAICDATA.minDistance) {
       camera.position.z = MOSAICDATA.minDistance
     }
