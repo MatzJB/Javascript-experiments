@@ -267,10 +267,7 @@ function init() {
   }, false)
 
   scene = new THREE.Scene()
-
   initLayers(scene, 4)
- 
-  console.log('scene was created')
   var canvas = GetCanvas()
 }
 
