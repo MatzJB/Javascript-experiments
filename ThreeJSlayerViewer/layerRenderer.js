@@ -13,11 +13,11 @@ data for the assets and the order of the layers
 var layerData = {
 
   'assetDirectory': 'gallery',
-  'maxDistance':400
+  'maxDistance': 400
 }
 
-var variantIndices =[ ] // indices to variants for each layer [0,1,2,3,...]
-var variantQuantities = [2,2,3,1] // number of variants for each layer, should be found out at runtime
+var variantIndices = [] // indices to variants for each layer [0,1,2,3,...]
+var variantQuantities = [2, 2, 3, 1] // number of variants for each layer, should be found out at runtime
 
 var cooldownSpeed = 0.97
 
@@ -40,7 +40,7 @@ var dxSpeed = 0,
   dzSpeed = 0
 var dxIsCoolingDown = false,
   dyIsCoolingDown = false,
-dzIsCoolingDown = false
+  dzIsCoolingDown = false
 
 var buttonNames = ['Mario world']
 var buttons = []
@@ -62,7 +62,7 @@ function getJSONData(filename, cb) {
   var client = new window.XMLHttpRequest()
   client.open('GET', filename)
 
-  client.onreadystatechange = function () {
+  client.onreadystatechange = function() {
     if (client.readyState === 4) {
       log('json was read')
       var data = JSON.parse(client.responseText)
@@ -120,7 +120,7 @@ function updateMovementDirection(event) {
     dzSpeed = 5
     movement = 1
 
-  console.log(camera.position)
+    console.log(camera.position)
 
     if (DEBUG)
       debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(zooming out)'
@@ -148,8 +148,7 @@ function updateMovementDirection(event) {
   if (event.touches) {
     x = event.touches[0].clientX;
     y = event.touches[0].clientY;
-  }
-  else {
+  } else {
     x = event.pageX
     y = event.pageY
   }
@@ -170,8 +169,8 @@ function updateMovementDirection(event) {
   dy = dir.y
   dx = dir.x
 
-  dx = Math.sign(dx) * Math.pow(dx, 2) * distance*2
-  dy = Math.sign(dy) * Math.pow(dy, 2) * distance*2
+  dx = Math.sign(dx) * Math.pow(dx, 2) * distance * 2
+  dy = Math.sign(dy) * Math.pow(dy, 2) * distance * 2
 
   if (distance < 0.1) {
     dx = 0
@@ -208,7 +207,7 @@ function log(str) {
 }
 
 // returns the canvas
-function GetCanvas(){
+function GetCanvas() {
 
   return document.getElementsByTagName("canvas")[0]
 }
@@ -223,8 +222,8 @@ function init() {
     info.appendChild(buttons[i])
     buttons[i].setAttribute('name', buttonNames[i])
     buttons[i].innerHTML = buttonNames[i]
-    buttons[i].addEventListener('click', function () {
-  /*todo: load new layers here*/
+    buttons[i].addEventListener('click', function() {
+      /*todo: load new layers here*/
 
       getAllJSONData(layerData['mosaicRoot'] + '/mosaic_' + buttonNames[i] + '.json')
     }, false)
@@ -236,12 +235,12 @@ function init() {
   var canvasHeight = window.innerHeight
 
   camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.01, 500)
-  log('camera was init:'+camera)
+  log('camera was init:' + camera)
   camera.position.set(0, 0, 10)
 
   renderer = new THREE.WebGLRenderer()
   renderer.setClearColor(0xAAAAAA)
-  
+
   renderer.sortElements = false;
 
   renderer.setPixelRatio(window.devicePixelRatio)
@@ -261,7 +260,7 @@ function init() {
   canvas.addEventListener("touchstart", touchStart, false)
   canvas.addEventListener("touchend", touchEnd, false)
   canvas.addEventListener("touchmove", touchMove, false);
-  canvas.addEventListener('contextmenu', function (ev) {
+  canvas.addEventListener('contextmenu', function(ev) {
     ev.preventDefault()
     return false
   }, false)
@@ -275,41 +274,41 @@ function init() {
 /*
   Removes a layer with the same name before creating it and returning the pointer
 */
-function createLayer(name, z)
-{
-    var entity = scene.getObjectByName(name)
-    scene.remove(entity)
+function createLayer(name, z) {
+  var entity = scene.getObjectByName(name)
+  scene.remove(entity)
 
-    var scale = 100
-    var geometry = new THREE.PlaneGeometry(scale, scale, 1 );
+  var scale = 100
+  var geometry = new THREE.PlaneGeometry(scale, scale, 1);
 
-    var material = new THREE.SpriteMaterial( { color: 0xffffff, 
-      blending: THREE.Normal,
-      transparent: true,
-      opacity: 1,
-      depthWrite: false,
-      side: THREE.DoubleSide
-} )
+  var material = new THREE.SpriteMaterial({
+    color: 0xffffff,
+    blending: THREE.Normal,
+    transparent: true,
+    opacity: 1,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  })
 
-  var layer = new THREE.Sprite( material );
+  var layer = new THREE.Sprite(material);
   layer.name = name
-  
+
   return layer
 }
 
 
 // get layername using id (todo: ...and version)
-function getLayerName(layerID){
+function getLayerName(layerID) {
   return 'sprite_' + layerID
 }
 
 
-function getLayer(layerID){
+function getLayer(layerID) {
   return scene.getObjectByName(getLayerName(layerID))
 }
 
-function GetLayerAssetFilename(layerID){
-  return './' + layerData['assetDirectory']+'/' + getLayerName(layerID) + '_' + variantIndices[layerID] + '.png'
+function GetLayerAssetFilename(layerID) {
+  return './' + layerData['assetDirectory'] + '/' + getLayerName(layerID) + '_' + variantIndices[layerID] + '.png'
 }
 
 
@@ -317,16 +316,14 @@ function GetLayerAssetFilename(layerID){
 function initLayers(scene, nLayers) {
 
   console.log('refreshing all layers...')
-  for(var i=0; i<nLayers; i++)
-  {
+  for (var i = 0; i < nLayers; i++) {
     var layerName = getLayerName(i)
-    console.log('created layer ' + layerName+' at level ' + i)
     var mesh = createLayer(layerName, i)
-    mesh.position.set(0,0, -i);
+    mesh.position.set(0, 0, -i);
     variantIndices[i] = 0
 
-    scene.add(mesh) 
-    refreshLayerTexture(i,GetLayerAssetFilename(i))
+    scene.add(mesh)
+    refreshLayerTexture(i, GetLayerAssetFilename(i))
   }
 
 }
@@ -340,9 +337,9 @@ function refreshLayerTexture(id, filename) {
 
   layer = getLayer(id)
   layer.material.map = textureMap
-  layer.material.blending= THREE.Normal
- 
-  textureMap.onload = function () {
+  layer.material.blending = THREE.Normal
+
+  textureMap.onload = function() {
     layer.material.needsUpdate = true
   }
 }
@@ -366,17 +363,16 @@ function updateButton() {
 
 function onKeyUp(e) {
 
-if (e.keyCode>=97 && e.keyCode <=105)
-{
-  var layerIndex = e.keyCode-97
-  variantIndices[layerIndex] = (variantIndices[layerIndex] + 1)%variantQuantities[layerIndex]
-  var variantindex = variantIndices[layerIndex]
-  console.log(variantIndices)
-  var filename = GetLayerAssetFilename(layerIndex)
+  if (e.keyCode >= 97 && e.keyCode <= 105) {
+    var layerIndex = e.keyCode - 97
+    variantIndices[layerIndex] = (variantIndices[layerIndex] + 1) % variantQuantities[layerIndex]
+    var variantindex = variantIndices[layerIndex]
+    console.log(variantIndices)
+    var filename = GetLayerAssetFilename(layerIndex)
 
-  console.log('filename:' + filename)
-  refreshLayerTexture(layerIndex, filename)
-}
+    console.log('filename:' + filename)
+    refreshLayerTexture(layerIndex, filename)
+  }
 
   switch (e.keyCode) {
     case 65: // A
@@ -525,7 +521,6 @@ function animate() {
     camera.updateProjectionMatrix()
     render()
   }
-
 
 
 
