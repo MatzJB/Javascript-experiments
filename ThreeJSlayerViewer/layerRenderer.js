@@ -347,7 +347,6 @@ function initLayers(scene, nLayers) {
 
 function refreshLayerTexture(id, filename) {
 
-  console.log('refreshing layer, loading file:'+ filename)
   textureMap = new THREE.TextureLoader().load(filename)
 
   textureMap.magFilter = THREE.LinearFilter
@@ -358,9 +357,6 @@ function refreshLayerTexture(id, filename) {
   layer.material.blending= THREE.Normal
  
   textureMap.onload = function () {
-    log('image:' + textureMap.image)
-    log('texture was loaded')
-
     layer.material.needsUpdate = true
   }
 }
