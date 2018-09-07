@@ -224,8 +224,8 @@ function init() {
     buttons[i].setAttribute('name', buttonNames[i])
     buttons[i].innerHTML = buttonNames[i]
     buttons[i].addEventListener('click', function () {
-/*load new layers here*/
-console.log('reading json')
+  /*todo: load new layers here*/
+
       getAllJSONData(layerData['mosaicRoot'] + '/mosaic_' + buttonNames[i] + '.json')
     }, false)
   }
