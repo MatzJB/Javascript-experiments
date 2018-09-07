@@ -277,7 +277,6 @@ function init() {
 */
 function createLayer(name, z)
 {
-    console.log('removing previous layer, if any: ' + name)
     var entity = scene.getObjectByName(name)
     scene.remove(entity)
 
