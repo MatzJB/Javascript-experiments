@@ -5,7 +5,7 @@ For this first version we only load images from a directory <assetDirectory>
 if (!Detector.webgl) Detector.addGetWebGLMessage()
 
 
-var DEBUG = true
+var DEBUG = false
 
 /*
 data for the assets and the order of the layers
@@ -17,7 +17,8 @@ var layerData = {
 }
 
 var variantIndices = [] // indices to variants for each layer [0,1,2,3,...]
-var variantQuantities = [2, 2, 3, 1] // number of variants for each layer, should be found out at runtime
+var variantQuantities = [2, 2, 3, 1] 
+// number of variants for each layer, should be found out at runtime
 
 var cooldownSpeed = 0.97
 
@@ -120,7 +121,7 @@ function updateMovementDirection(event) {
     dzSpeed = 5
     movement = 1
 
-    console.log(camera.position)
+    log(camera.position)
 
     if (DEBUG)
       debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(zooming out)'
@@ -202,7 +203,7 @@ function touchEnd(event) {
 
 function log(str) {
   if (DEBUG) {
-    console.log(str)
+    log(str)
   }
 }
 
@@ -283,7 +284,6 @@ function createLayer(name, z) {
 
   var material = new THREE.SpriteMaterial({
     color: 0xffffff,
-    blending: THREE.Normal,
     transparent: true,
     opacity: 1,
     depthWrite: false,
@@ -315,7 +315,7 @@ function GetLayerAssetFilename(layerID) {
 //initialize layers that exist
 function initLayers(scene, nLayers) {
 
-  console.log('refreshing all layers...')
+  log('refreshing all layers...')
   for (var i = 0; i < nLayers; i++) {
     var layerName = getLayerName(i)
     var mesh = createLayer(layerName, i)
@@ -367,10 +367,10 @@ function onKeyUp(e) {
     var layerIndex = e.keyCode - 97
     variantIndices[layerIndex] = (variantIndices[layerIndex] + 1) % variantQuantities[layerIndex]
     var variantindex = variantIndices[layerIndex]
-    console.log(variantIndices)
+    log(variantIndices)
     var filename = GetLayerAssetFilename(layerIndex)
 
-    console.log('filename:' + filename)
+    log('filename:' + filename)
     refreshLayerTexture(layerIndex, filename)
   }
 
