@@ -49,16 +49,6 @@ init()
 render()
 animate()
 
-function loadingStart() {
-  /*
-    var canvas = document.getElementsByTagName("canvas")[0]
-    console.log("canvas:", canvas)  
-  
-    var context = canvas.getContext('2d');
-    var x = canvas.width / 2;
-    var y = canvas.height / 2;
-  */
-}
 
 function getCenter() {
   var x = document.documentElement.clientWidth * 0.5
