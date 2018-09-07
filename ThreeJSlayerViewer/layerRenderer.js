@@ -295,7 +295,7 @@ function createLayer(name, z)
     scene.remove(entity)
 
     var scale = 100
-    var geometry = new THREE.PlaneGeometry(10, 10, 1 );
+    var geometry = new THREE.PlaneGeometry(scale, scale, 1 );
 
     var material = new THREE.SpriteMaterial( { color: 0xffffff, 
       blending: THREE.Normal,
@@ -323,7 +323,7 @@ function getLayer(layerID){
 }
 
 function GetLayerAssetFilename(layerID){
-  return './'+assetDirectory['assetDirectory'] + getLayerName(layerID) + '_' + variantIndices[layerID] + '.png'
+  return './' + layerData['assetDirectory']+'/' + getLayerName(layerID) + '_' + variantIndices[layerID] + '.png'
 }
 
 
