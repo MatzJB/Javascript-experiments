@@ -13,14 +13,14 @@ data for the assets and the order of the layers
 var layerData = {
 
   'assetDirectory': 'gallery',
-  'maxDistance': 400
+  'maxDistance': 300
 }
 
 var variantIndices = [] // indices to variants for each layer [0,1,2,3,...]
 var variantQuantities = [2, 2, 3, 1] 
 // number of variants for each layer, should be found out at runtime
 
-var cooldownSpeed = 0.97
+var cooldownSpeed = 0.8
 
 var movement = 0 // [0,1]
 
@@ -31,7 +31,7 @@ var billboard = new THREE.PlaneGeometry()
 var loading //used to show a loading animation
 
 var mousePressed = false
-var speedFactor = 40 // default speed of movement
+var speedFactor = 10 // default speed of movement
 
 var dx = 0,
   dy = 0,
@@ -120,8 +120,6 @@ function updateMovementDirection(event) {
   if (nFingers === 3) {
     dzSpeed = 5
     movement = 1
-
-    log(camera.position)
 
     if (DEBUG)
       debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(zooming out)'
@@ -235,7 +233,7 @@ function init() {
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
 
-  camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.01, 500)
+  camera = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerHeight, 0.01, 500)
   log('camera was init:' + camera)
   camera.position.set(0, 0, 10)
 
@@ -279,7 +277,7 @@ function createLayer(name, z) {
   var entity = scene.getObjectByName(name)
   scene.remove(entity)
 
-  var scale = 100
+  var scale = 1
   var geometry = new THREE.PlaneGeometry(scale, scale, 1);
 
   var material = new THREE.SpriteMaterial({
@@ -343,7 +341,7 @@ function refreshLayerTexture(id, filename) {
     layer.material.needsUpdate = true
   }
 }
-
+// todo: update
 function updateButton() {
   if (layerData['mosaicMetadata'] != undefined) {
     var billboard = createSprite(layerData.indices,
@@ -369,8 +367,6 @@ function onKeyUp(e) {
     var variantindex = variantIndices[layerIndex]
     log(variantIndices)
     var filename = GetLayerAssetFilename(layerIndex)
-
-    log('filename:' + filename)
     refreshLayerTexture(layerIndex, filename)
   }
 
@@ -509,7 +505,7 @@ function animate() {
     speed = speedFactor * Math.log10(1 + 0.1 * Math.abs(camera.position.z / layerData.maxDistance))
     camera.position.x += speed * movement * dx + speed * movement * dxSpeed
     camera.position.y += speed * movement * dy + speed * movement * dySpeed
-    camera.position.z += speed * movement * dz + speed * movement * dzSpeed
+    camera.position.z += 2*speed * movement * dz + speed * movement * dzSpeed
 
     if (camera.position.z < layerData.minDistance) {
       camera.position.z = layerData.minDistance
