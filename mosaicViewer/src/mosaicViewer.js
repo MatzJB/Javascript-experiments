@@ -26,32 +26,84 @@ var cooldownSpeed = 0.97
 var camera, scene, renderer
 var cameraControls
 var billboard = new THREE.PlaneGeometry()
-var loading //used to show a loading animation
-var loader = { 'mesh': new THREE.Mesh(), 'activated': true }
+var loading // used to show a loading animation
+var loader = {
+  'mesh': new THREE.Mesh(),
+  'activated': true
+}
 var mousePressed = false
+var useColors = 0
+var blurStrength = -0.1
 
+var buttonNames = [
+  'Ahsoka',
+  'AmyAcker__Sexy010',
+  'Ashoka 2',
+  'Bertine',
+  'Bicycle',
+  'Bioshock',
+  'Bioshock2',
+  'chess',
+  'colette',
+  'cow vs girl',
+  'Einstein',
+  'Entangled 2',
+  'Entangled2',
+  'Eyes',
+  'Ghostbusters',
+  'Inna',
+  'jaguar',
+  'Janet Leigh 2',
+  'Janet Leigh',
+  'Jedi',
+  'Jockey',
+  'Kick Ass',
+  'liberty',
+  'Lucy Liu',
+  'Mandelbrot',
+  'Mario',
+  'Melissa',
+  'Monica',
+  'mosaic glass',
+  'Norman Bates',
+  'picking a star',
+  'Pickle Rick',
+  'Pig colors',
+  'pig',
+  'Pig-baby',
+  'Piggy 2',
+  'Piggy',
+  'piglet',
+  'plumber Mario',
+  'queen',
+  'rainbow',
+  'scream',
+  'Soldier',
+  'Star Trek',
+  'the kiss',
+  'Tony Curtis',
+  'Tori Amos',
+  'Trump',
+  'women kranium']
 
-//todo: read gallery from json 
-var buttonNames = ['Mario', 'Pickle Rick', 'Mona', 'Einstein', 'Lucy Liu', 'Norman Bates', 'jaguar',
-  'pig', 'the kiss', 'Trump', 'colette', 'gargantua', 'helpinghand', 'rainbow', 'jobs', 'chess']
 var buttons = []
 
 init()
 render()
 animate()
 
-function loadingStart() {
+function loadingStart () {
   /*
     var canvas = document.getElementsByTagName("canvas")[0]
-    console.log("canvas:", canvas)  
-  
+    console.log("canvas:", canvas)
+
     var context = canvas.getContext('2d');
     var x = canvas.width / 2;
     var y = canvas.height / 2;
   */
 }
 
-function getCenter() {
+function getCenter () {
   var x = document.documentElement.clientWidth * 0.5
   var y = document.documentElement.clientHeight * 0.5
   var center = new THREE.Vector2(x, y)
@@ -59,7 +111,7 @@ function getCenter() {
   return center
 }
 
-function getJSONData(filename, cb) {
+function getJSONData (filename, cb) {
   var client = new window.XMLHttpRequest()
   client.open('GET', filename)
 
@@ -73,56 +125,51 @@ function getJSONData(filename, cb) {
   client.send()
 }
 
-function _isTouchDevice() {
+function _isTouchDevice () {
   try {
-    document.createEvent('TouchEvent');
-    return true;
+    document.createEvent('TouchEvent')
+    return true
   } catch (e) {
-    return false;
+    return false
   }
 }
 
-function onMouseDown(event) {
+function onMouseDown (event) {
   mousePressed = true
   updateMovementDirection(event)
 }
 
-function onMouseUp(event) {
+function onMouseUp (event) {
   mousePressed = false
   touchEnd(event)
 }
 
-function onMouseMove(event) {
-  if (mousePressed)
-    touchMove(event)
+function onMouseMove (event) {
+  if (mousePressed) { touchMove(event) }
 }
 
-function touchMove(event) {
+function touchMove (event) {
   event.preventDefault() // prevents scrolling
   updateMovementDirection(event)
 }
 
-function updateMovementDirection(event) {
+function updateMovementDirection (event) {
   var debug = document.getElementById('info')
   var debugTextNode = debug.childNodes[0]
 
   if (DEBUG) {
-    debugTextNode.nodeValue = 'fingers used: ' + nFingers + " ok"
+    debugTextNode.nodeValue = 'fingers used: ' + nFingers + ' ok'
   }
 
   var nFingers = 0
-  if (event.touches)
-    nFingers = event.touches.length
-  else
-    nFingers = event.which
+  if (event.touches) { nFingers = event.touches.length } else { nFingers = event.which }
 
   // zoom out
   if (nFingers === 3) {
     dzSpeed = 5
     movement = 1
 
-    if (DEBUG)
-      debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(zooming out)'
+    if (DEBUG) { debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(zooming out)' }
     return
   }
 
@@ -131,8 +178,7 @@ function updateMovementDirection(event) {
     dzSpeed = 2
     camera.position.set(0, 0, MOSAICDATA.maxDistance)
     movement = 0
-    if (DEBUG)
-      debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(reset zoom)'
+    if (DEBUG) { debugTextNode.nodeValue = 'fingers used: ' + nFingers + '(reset zoom)' }
     return
   }
 
@@ -145,10 +191,9 @@ function updateMovementDirection(event) {
   dzSpeed = 0
 
   if (event.touches) {
-    x = event.touches[0].clientX;
-    y = event.touches[0].clientY;
-  }
-  else {
+    x = event.touches[0].clientX
+    y = event.touches[0].clientY
+  } else {
     x = event.pageX
     y = event.pageY
   }
@@ -169,8 +214,8 @@ function updateMovementDirection(event) {
   dy = dir.y
   dx = dir.x
 
-  dx = Math.sign(dx) * Math.pow(dx, 2) * distance*2
-  dy = Math.sign(dy) * Math.pow(dy, 2) * distance*2
+  dx = Math.sign(dx) * Math.pow(dx, 2) * distance * 2
+  dy = Math.sign(dy) * Math.pow(dy, 2) * distance * 2
 
   if (distance < 0.1) {
     dx = 0
@@ -184,14 +229,14 @@ function updateMovementDirection(event) {
   movement = 1
 }
 
-//start movement
-function touchStart(event) {
+// start movement
+function touchStart (event) {
   event.preventDefault()
 
   updateMovementDirection(event)
 }
 
-function touchEnd(event) {
+function touchEnd (event) {
   dx = 0
   dy = 0
   dz = 0
@@ -200,13 +245,13 @@ function touchEnd(event) {
   dzIsCoolingDown = true
 }
 
-function log(str) {
+function log (str) {
   if (DEBUG) {
     console.log(str)
   }
 }
 
-function init() {
+function init () {
   isTouchDevice = _isTouchDevice()
   log('touch device?' + isTouchDevice)
 
@@ -236,18 +281,20 @@ function init() {
   renderer.setSize(canvasWidth, canvasHeight)
   renderer.gammaInput = true
   renderer.gammaOutput = true
+  renderer.antialias = true
+
   container.appendChild(renderer.domElement)
 
   window.addEventListener('keydown', onKeyDown, false)
   window.addEventListener('keyup', onKeyUp, false)
 
-  var canvas = document.getElementsByTagName("canvas")[0]
+  var canvas = document.getElementsByTagName('canvas')[0]
   canvas.addEventListener('mousedown', onMouseDown, false)
   canvas.addEventListener('mouseup', onMouseUp, false)
   canvas.addEventListener('mousemove', onMouseMove, false)
-  canvas.addEventListener("touchstart", touchStart, false)
-  canvas.addEventListener("touchend", touchEnd, false)
-  canvas.addEventListener("touchmove", touchMove, false);
+  canvas.addEventListener('touchstart', touchStart, false)
+  canvas.addEventListener('touchend', touchEnd, false)
+  canvas.addEventListener('touchmove', touchMove, false)
   canvas.addEventListener('contextmenu', function (ev) {
     ev.preventDefault()
     return false
@@ -261,13 +308,16 @@ function init() {
   loader.mesh.materialColor = new THREE.Color(255, 0, 0)
 
   var materialColor = new THREE.Color()
-  billboard.material = new THREE.MeshBasicMaterial({ color: materialColor })
+  billboard.material = new THREE.MeshBasicMaterial({
+    color: materialColor
+  })
+
   scene = new THREE.Scene()
   scene.add(loader.mesh)
   loader.mesh.material.needsUpdate = true
 }
 
-function getAllJSONData(filename, cb) {
+function getAllJSONData (filename, cb) {
   loadingStart()
   getJSONData(filename, function (data) {
     var spriteMapJsonFilename = './' + MOSAICDATA['mosaicRoot'] + '/' + data['spriteMap']
@@ -281,15 +331,37 @@ function getAllJSONData(filename, cb) {
       MOSAICDATA.spritemapMetadata = spriteData['metadata']
       MOSAICDATA.spritemapColordata = './' + MOSAICDATA['mosaicRoot'] + '/' + spriteData['colordata']
       textureMap = new THREE.TextureLoader().load(MOSAICDATA.spritemapColordata)
-      textureMap.magFilter = THREE.NearestFilter;
-      textureMap.minFilter = THREE.LinearMipMapLinearFilter;
+      textureMap.magFilter = THREE.NearestFilter
+      textureMap.minFilter = THREE.LinearMipMapLinearFilter
 
       log('spritemap color data file: ' + MOSAICDATA.spritemapColordata)
-      billboard.material = new THREE.MeshBasicMaterial()
+
       billboard.material.map = textureMap
+
+      var mat = new THREE.ShaderMaterial({
+        uniforms: {
+          texture: {
+            type: 't',
+            value: textureMap
+          },
+          useColors: {
+            type: 'i',
+            value: useColors
+          },
+          blurStrength: {
+            type: 'f',
+            value: blurStrength
+          }
+        },
+        vertexShader: document.getElementById('vertexShader').text,
+        fragmentShader: document.getElementById('fragmentShader').text
+      })
+      billboard.material = mat
+
       textureMap.onload = function () {
         log('image:' + textureMap.image)
         log('>>>> LOADED texture')
+        billboard.uniforms.texture.value = textureMap
 
         billboard.material.needsUpdate = true
       }
@@ -301,7 +373,7 @@ function getAllJSONData(filename, cb) {
   })
 }
 
-function updateButton() {
+function updateButton () {
   log('MOSAICDATA ' + MOSAICDATA)
 
   if (MOSAICDATA['mosaicMetadata'] != undefined) {
@@ -311,7 +383,7 @@ function updateButton() {
     billboard.material.needsUpdate = true
 
     // remove previously created billboards, if any
-    var billboardName = "billboard"
+    var billboardName = 'billboard'
     var entity = scene.getObjectByName(billboardName)
     scene.remove(entity)
     // create and add billboard geometry
@@ -320,7 +392,7 @@ function updateButton() {
   }
 }
 
-function onKeyUp(e) {
+function onKeyUp (e) {
   switch (e.keyCode) {
     case 65: // A
       dxSpeed = dx
@@ -358,6 +430,17 @@ function onKeyUp(e) {
       dz = 0
       movement = 0
       break
+    case 67: // c
+      console.log('toggling color ' + useColors)
+      useColors = -useColors + 1
+      billboard.material.uniforms.useColors.value = useColors
+      break
+    case 66: // b
+
+      console.log('blur! ' + blurStrength)
+      blurStrength += 0.2
+      billboard.material.uniforms.blurStrength.value = blurStrength
+      break
   }
 
   if (dx === 0 && dy === 0 && dz === 0) {
@@ -365,13 +448,13 @@ function onKeyUp(e) {
   }
 }
 
-function resetdxyz() {
+function resetdxyz () {
   dx = 0
   dy = 0
   dz = 0
 }
 
-function onKeyDown(e) {
+function onKeyDown (e) {
   keyIsUp = false
 
   // note: we we switch direction quicker than the repetition speed, we will see this in the movement of the camera
@@ -389,7 +472,7 @@ function onKeyDown(e) {
       dxSpeed = dx
       dxIsCoolingDown = false
       break
-    case 87: // W 
+    case 87: // W
       dy = 1
       dySpeed = dy
       dyIsCoolingDown = false
@@ -416,7 +499,7 @@ function onKeyDown(e) {
   }
 }
 
-function onWindowResize() {
+function onWindowResize () {
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
   renderer.setSize(canvasWidth, canvasHeight)
@@ -425,13 +508,13 @@ function onWindowResize() {
   render()
 }
 
-function render() {
+function render () {
   scene.background = new THREE.Color(0, 0, 0)
   renderer.render(scene, camera)
 }
 
 /* Create a plane with UV coordinates pointing into a <spritemap> using the mosaic <indices> matrix. */
-function createSprite(indices, mosaicmetadata, spritemapmetadata) {
+function createSprite (indices, mosaicmetadata, spritemapmetadata) {
   var spriteMapPixelWidth = spritemapmetadata['pixelWidth']
   var spriteMapPixelHeight = spritemapmetadata['pixelHeight']
   var tilesXsprite = spritemapmetadata['columns']
@@ -459,12 +542,12 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
      * (1)----(4)
      *  |      |
      * (2)----(3)
-     * 
+     *
      * Triangle creation order (threeJS):
      * (1)---(3,6)
      * |   /     |
      * (2,4)---(5)
-     * 
+     *
      */
 
     // coordinates are row-major, so they should be row major in mosaic data layout
@@ -502,12 +585,10 @@ function createSprite(indices, mosaicmetadata, spritemapmetadata) {
   return billboard
 }
 
-
-function animate() {
-
+function animate () {
   if (loading) {
 
-    //show 'loading' sprite 
+    // show 'loading' sprite
   }
 
   if (dxIsCoolingDown && Math.abs(dxSpeed) > 0) {

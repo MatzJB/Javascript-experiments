@@ -49,6 +49,80 @@
 		</div>
 	</div>
 
+
+	<script id="vertexShader" type="shader">
+		varying vec2 vUv;
+				
+		void main() {
+			vUv = uv;
+
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0 );
+		}
+	</script>
+			
+	<script id="fragmentShader" type="shader">
+		uniform sampler2D texture;
+		uniform int useColors;
+		uniform int blurStrength;
+
+		varying vec2 vUv;
+
+		vec3 desaturize(vec3 color)
+		{
+			float grayScale = dot(color, vec3(0.299, 0.587, 0.114));
+			return vec3(grayScale, grayScale, grayScale);
+		}
+
+		void main() 
+		{
+			float n = 8.0;
+			const int delta = 100; //width of billboard
+
+			if (blurStrength > 0)
+			{
+				
+				/*
+				for(int i=0; i<n; i++)
+				{
+					for(int j=0; j<n; j++)
+					{
+						gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + 
+							vec2(i/200.0, 0));
+
+						//gl_FragColor += texture2D(texture, vUv + vec2(i/n,j/n) );
+					}
+				}
+
+				gl_FragColor = 1/(n*n)*gl_FragColor;
+*/				
+
+				//gl_FragColor = vec4(1,0,0,0);
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + vec2(0.0001, 0.001) );
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv - vec2(0.0001, 0.001) );
+
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + vec2(0.0002, 0) );
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv - vec2(0.0002, 0) );
+
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + vec2(0.0003, 0.001) );
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv - vec2(0.0003, 0.001) );
+
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + vec2(0.0004, 0) );
+				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv - vec2(0.0004, 0) );
+
+			}
+			else
+			{
+				gl_FragColor = texture2D(texture, vUv);
+			}
+
+			if (useColors==0)
+			{
+				gl_FragColor = vec4(desaturize(gl_FragColor.rgb),0);
+			}
+						
+		}
+	</script>
+
 	<script src="./build/three.js"></script>
 	<script src="./js/controls/OrbitControls.js"></script>
 	<script src="./js/Detector.js"></script>
