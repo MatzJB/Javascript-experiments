@@ -40,15 +40,9 @@
 
 <body id="body">
 	<div id="info">
-		Usage: <br>
-		On a PC: zoom in = e, zoom out = f, reset zoom = z, zoom in = left MB (hold), zoom out = right MB (tap)
-		<br> On a smart device: zoom in = touch (and hold), zoom out=three fingers,
-		reset zoom = two fingers <br>
-		<br>
 		<div id="debug">
 		</div>
 	</div>
-
 
 	<script id="vertexShader" type="shader">
 		varying vec2 vUv;
@@ -80,22 +74,6 @@
 
 			if (blurStrength > 0)
 			{
-				
-				/*
-				for(int i=0; i<n; i++)
-				{
-					for(int j=0; j<n; j++)
-					{
-						gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + 
-							vec2(i/200.0, 0));
-
-						//gl_FragColor += texture2D(texture, vUv + vec2(i/n,j/n) );
-					}
-				}
-
-				gl_FragColor = 1/(n*n)*gl_FragColor;
-*/				
-
 				//gl_FragColor = vec4(1,0,0,0);
 				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + vec2(0.0001, 0.001) );
 				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv - vec2(0.0001, 0.001) );
@@ -108,7 +86,6 @@
 
 				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv + vec2(0.0004, 0) );
 				gl_FragColor += vec4(1.0/n)*texture2D(texture, vUv - vec2(0.0004, 0) );
-
 			}
 			else
 			{

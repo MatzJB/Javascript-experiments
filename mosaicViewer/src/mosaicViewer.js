@@ -35,56 +35,8 @@ var mousePressed = false
 var useColors = 0
 var blurStrength = -0.1
 
-var buttonNames = [
-  'Ahsoka',
-  'AmyAcker__Sexy010',
-  'Ashoka 2',
-  'Bertine',
-  'Bicycle',
-  'Bioshock',
-  'Bioshock2',
-  'chess',
-  'colette',
-  'cow vs girl',
-  'Einstein',
-  'Entangled 2',
-  'Entangled2',
-  'Eyes',
-  'Ghostbusters',
-  'Inna',
-  'jaguar',
-  'Janet Leigh 2',
-  'Janet Leigh',
-  'Jedi',
-  'Jockey',
-  'Kick Ass',
-  'liberty',
-  'Lucy Liu',
-  'Mandelbrot',
-  'Mario',
-  'Melissa',
-  'Monica',
-  'mosaic glass',
-  'Norman Bates',
-  'picking a star',
-  'Pickle Rick',
-  'Pig colors',
-  'pig',
-  'Pig-baby',
-  'Piggy 2',
-  'Piggy',
-  'piglet',
-  'plumber Mario',
-  'queen',
-  'rainbow',
-  'scream',
-  'Soldier',
-  'Star Trek',
-  'the kiss',
-  'Tony Curtis',
-  'Tori Amos',
-  'Trump',
-  'women kranium']
+
+var buttonNames = ['Tony Curtis', 'Janet Leigh 2', 'Penny Serenade_279', 'algiers_1812', 'algiers_1795', 'algiers_023', 'Norman Bates']
 
 var buttons = []
 
@@ -291,7 +243,7 @@ function init () {
   var canvas = document.getElementsByTagName('canvas')[0]
   canvas.addEventListener('mousedown', onMouseDown, false)
   canvas.addEventListener('mouseup', onMouseUp, false)
-  canvas.addEventListener('mousemove', onMouseMove, false)
+  //canvas.addEventListener('mousemove', onMouseMove, false) //will product wonky navigation if enabled
   canvas.addEventListener('touchstart', touchStart, false)
   canvas.addEventListener('touchend', touchEnd, false)
   canvas.addEventListener('touchmove', touchMove, false)
