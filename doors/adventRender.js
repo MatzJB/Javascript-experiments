@@ -1,7 +1,7 @@
 /*
 For this first version we only load images from a directory <assetDirectory>
 */
-console.log('test')
+// console.log('test')
 
 if (!Detector.webgl) Detector.addGetWebGLMessage()
 
@@ -10,44 +10,48 @@ var isTouchDevice = false
 var camera, scene, renderer
 var cameraControls
 var billboard = new THREE.PlaneGeometry()
-
 var mousePressed = false
 
 
-class Door
-{
-  //working on it...
-  constructor(name, xCoordStart, yCoordStart, xCoordEnd, yCoordEnd)
-  {
+
+function log(str) {
+  if (DEBUG) {
+    console.log(str)
+  }
+}
+
+
+
+class Door {
+  constructor(name, xCoordStart, yCoordStart, xCoordEnd, yCoordEnd) {
     this.xCoordStart = xCoordStart
     this.yCoordStart = yCoordStart
     this.xCoordEnd = xCoordEnd
     this.yCoordEnd = yCoordEnd
-    this.angle=0    
-    // contains graphics asset
-    // threejs geometry
-    // state (open/closed)
+    this.turning_door = false
     var x = xCoordStart
     var y = yCoordStart
-
-    var mesh = createCard(name, 1, x, y, xCoordEnd-xCoordStart, yCoordEnd-yCoordStart)
-    var filename = '/gallery/door_inside1/acercarse.png'
-
-    console.log('created door '+ name)
-    console.log(mesh)
+    // // this.movie = movie
+    // console.log('test')
+    var mesh = createCard(this, name, 1, x, y, xCoordEnd - xCoordStart, yCoordEnd - yCoordStart)
+    var filename = '/gallery/door_inside1/casarse.png'
+    this.mesh = mesh
+    // console.log('created door ' + name)
+    // console.log(mesh)
 
     scene.add(mesh)
     refreshLayerTexture(name, filename)
   }
 
-  turnOver()
+
+  openDoor()
   {
-    log('turn over')
-    this.angle = 90
-
+    console.log('opening door')
+    this.turning_door= true
   }
-
 }
+
+
 
 
 
@@ -60,15 +64,6 @@ render()
 animate()
 
 
-function log(str) {
-  if (DEBUG) {
-    console.log(str)
-  }
-}
-
-
-
-
 function getCenter() {
   var x = document.documentElement.clientWidth * 0.5
   var y = document.documentElement.clientHeight * 0.5
@@ -76,6 +71,7 @@ function getCenter() {
 
   return center
 }
+
 
 function getJSONData(filename, cb) {
   var client = new window.XMLHttpRequest()
@@ -91,6 +87,7 @@ function getJSONData(filename, cb) {
   client.send()
 }
 
+
 function _isTouchDevice() {
   try {
     document.createEvent('TouchEvent');
@@ -100,37 +97,43 @@ function _isTouchDevice() {
   }
 }
 
+
 function onMouseDown(event) {
   mousePressed = true
 }
 
+
 function onMouseUp(event) {
   mousePressed = false
-  x = event.clientX
-  y = event.clientY
-  hitTest(x, y)
+
+  // doors[0].rotation(0, 0, Math.PI / 2)
+
+  console.log('artie')
+  hitTest()
   // touchEnd(event)
 }
 
 
-
 // returns the canvas
 function GetCanvas() {
-
   return document.getElementsByTagName("canvas")[0]
 }
+
 
 /*
   Build advent calendar given arguments for number of tiles in each axle
 */
 function BuildAdventCalendar()
 {
-
-  // doors.push(new Door('hey', 350, 350, 700, 700))
   console.log('creating the advent calendar')
-  doors.push(new Door('First_door', 0, 0, 400, 400))
-  
-  console.log(doors)
+  tmp = new Door('First_door', 0, 0, 400, 400)
+
+  doors.push(tmp)
+
+
+  // doors[0].turnOver()
+  console.log('***')
+  console.log(doors[0])
 }
 
 
@@ -159,7 +162,6 @@ function init()
   renderer.gammaOutput = true
 
   container.appendChild(renderer.domElement)
-
   // window.addEventListener('keydown', onKeyDown, false)
 
   var canvas = GetCanvas()
@@ -173,22 +175,15 @@ function init()
   scene = new THREE.Scene()
   log('scene was created')
   BuildAdventCalendar()
-  // var canvas = GetCanvas()
 }
 
 
 function refreshLayerTexture(name, filename) {
 
   textureMap = new THREE.TextureLoader().load(filename)
-
   textureMap.magFilter = THREE.LinearFilter
   textureMap.minFilter = THREE.LinearFilter
-
-
   layer = scene.getObjectByName(name)
-  
-
-  // layer = getelementbyname(name)
   layer.material.map = textureMap
   layer.material.blending = THREE.Normal
 
@@ -199,9 +194,8 @@ function refreshLayerTexture(name, filename) {
 
 
 // check hit test against the doors in the scene, returns the door
-function hitTest(x_hit, y_hit)
+function hitTest()
 {
-
   const raycaster = new THREE.Raycaster()
   
   var e = window.event;
@@ -212,13 +206,14 @@ function hitTest(x_hit, y_hit)
   var x = ( posX/ window.innerWidth ) * 2 - 1
 	var y = - ( posY/ window.innerHeight ) * 2 + 1
 
-  raycaster.setFromCamera( new THREE.Vector2(x,y), camera );
+  raycaster.setFromCamera( new THREE.Vector2(x, y), camera );
 
 	// calculate objects intersecting the picking ray
 	const intersects = raycaster.intersectObjects( scene.children ) 
+  log(intersects)
+  //  const door_object = scene.getObjectByName(intersects[0].object.name)
+     intersects[0].object.userData.openDoor()
   
-  //log(intersects[0])
-  intersects[0].object.turnOver()
   // trigger turn over which sets angle, animation takes care of animation
 
   /*
@@ -242,9 +237,10 @@ function hitTest(x_hit, y_hit)
 }
 
 
-
+// how can I refer to the door object in the scene from sprite?
+//tried userdata, will not work
 //ok
-function createCard(name, z, x, y, width, height)
+function createCard(ref, name, z, x, y, width, height)
  {
   // remove it if it already exist
   var entity = scene.getObjectByName(name)
@@ -263,14 +259,33 @@ function createCard(name, z, x, y, width, height)
   var layer = new THREE.Sprite(material)
   layer.name = name
   layer.position.set(x, y, 0)
+  layer.userData = ref
   
   return layer
+}
+
+function createCard(ref, name, z, x, y, width, height)
+{
+  var entity = scene.getObjectByName(name)
+  scene.remove(entity)
+
+  const geometry = new THREE.PlaneGeometry( 1, 1 );
+  const material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
+  const layer = new THREE.Mesh( geometry, material );
+
+  layer.name = name
+  layer.position.set(x, y, 0)
+  layer.userData = ref
+  
+  return layer
+
 }
 
 
 function getSpriteName(spriteID) {
   return 'sprite_' + spriteID
 }
+
 
 function getSprite(spriteID) {
   return scene.getObjectByName(getSpriteName(spriteID))
@@ -332,20 +347,67 @@ function render() {
 }
 
 
-function animate() {
-// move door
-  var i = 0
-  for(; i<doors.length; i++)
-  {
-    if(doors[i].angle>0)
-    {
-      log('rotate')
-      doors[i].angle-=0.1
-      doors[i].mesh.rotateX(doors[i].angle)
-    }
+var rotation =0
+var offset=0
 
+function animate() {
+
+  setTimeout( function() {
+      requestAnimationFrame( animate );
+  }, 1000 / 60 );
+
+  
+
+  for(i=0; i<doors.length;i++)
+  {
+
+    if (doors[i].turning_door && rotation<90)
+{     
+        // doors[i].mesh.position.set(offset, 0, 0)
+        rotation+=0.001
+        doors[i].mesh.rotation.set(0, rotation, 0, 'XYZ')
+        // window.requestAnimationFrame(animate)
+
+        // log(doors[i].mesh.rotation.y)
+        // log(offset)
+        // doors[i].mesh.material.rotation += new three.vector3(0,0,1,10)
+        // log(doors[i].mesh.rotation)
+
+    }
   }
 
   render()
   window.requestAnimationFrame(animate)
 }
+
+
+
+
+// function animate() {
+// // move door
+
+//   doors[0].rotateY(0.0001)
+
+
+//   // var i = 0
+//   // for(; i<doors.length; i++)
+//   // {
+//   //   // if(doors[i].angle>0)
+//   //   {
+//   //     // doors[i].rotation.x -= 0.001
+//   //     log('rotation now')
+//   //     // doors[i].rotateY(0.1)
+//   //     // mesh.rotateY(Math.PI / 2);
+
+//   //     // doors[i].mesh.rotateX(doors[i].angle)
+//   //     // doors[i].rotateOnAxis( new THREE.Vector3( 1,0,0), 0 );
+//   //     // doors[i].rotateOnAxis( new THREE.Vector3( 0, 0, 1), 0.001);
+//   //     // doors[i].matrixAutoUpdate  = true
+//   //     camera.updateProjectionMatrix()
+//   //     render()
+//   //   }
+//   // }
+//   camera.updateProjectionMatrix()
+//   render()
+//   window.requestAnimationFrame(animate)
+// }
