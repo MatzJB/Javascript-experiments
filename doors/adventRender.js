@@ -1,7 +1,47 @@
 /*
-For this first version we only load images from a directory <assetDirectory>
+Matz JB
+12/7 2023
+
+Build cards based on json
+Show 'scenes' from json
+Buffer audio when switching scene. 
+
 */
-// console.log('test')
+
+//load data from file maybe?
+jsonData = {
+  "scenes": [
+    {
+      "background": "scene1_background.jpg",
+      "images": [
+        {
+          "filename": "image1.jpg",
+          "audio": "image1_audio.mp3",
+          "position": [100, 200],
+          "animation": "fade-in"
+        },
+        {
+          "filename": "image2.jpg",
+          "audio": "image2_audio.mp3",
+          "position": [300, 400],
+          "animation": "slide-in"
+        }
+      ]
+    },
+    {
+      "background": "scene2_background.jpg",
+      "images": [
+        {
+          "filename": "image3.jpg",
+          "audio": "image3_audio.mp3",
+          "position": [500, 600],
+          "animation": "rotate"
+        }
+      ]
+    }
+  ]
+}
+
 
 if (!Detector.webgl) Detector.addGetWebGLMessage()
 
@@ -13,49 +53,106 @@ var billboard = new THREE.PlaneGeometry()
 var mousePressed = false
 
 
-
 function log(str) {
   if (DEBUG) {
     console.log(str)
   }
 }
 
+// add audio
+const listener = new THREE.AudioListener()
 
+
+function bufferAudio(filename)
+{
+    const sound = new THREE.Audio(listener)
+    const audioLoader = new THREE.AudioLoader()
+    audioLoader.load(filename, function(buffer) {
+        sound.setBuffer(buffer)
+        sound.setLoop(false)
+        sound.setVolume(0.25)
+    })
+    log('Buffering audio ' + filename)
+    return sound
+}
+
+
+function rotateAroundPoint(object, anchorPoint, angle, axisrotation) {
+  let moveDir = new THREE.Vector3(
+    anchorPoint.x - object.position.x,
+    anchorPoint.y - object.position.y,
+    anchorPoint.z - object.position.z
+  )
+  moveDir.normalize()
+  let moveDist = object.position.distanceTo(anchorPoint)
+  /// step 2: move object to anchor point
+  object.translateOnAxis(moveDir, moveDist)
+  /// step 3: rotate object
+  object.rotateX(angle * axisrotation.x)
+  object.rotateY(angle * axisrotation.y)
+  object.rotateZ(angle * axisrotation.z)
+  /// step4: move object along the opposite direction
+  moveDir.multiplyScalar(-1)
+  object.translateOnAxis(moveDir, moveDist)
+}
 
 class Door {
-  constructor(name, xCoordStart, yCoordStart, xCoordEnd, yCoordEnd) {
+  constructor(name, filename, audioFilename, xCoordStart, yCoordStart, xCoordEnd, yCoordEnd) {
     this.xCoordStart = xCoordStart
     this.yCoordStart = yCoordStart
     this.xCoordEnd = xCoordEnd
     this.yCoordEnd = yCoordEnd
-    this.turning_door = false
+    this.animating = true //should be false
+    var deg = 90
+    this.rotation = 0
+    this.time = 0
+    this.angle = 0
+    this.finish_angle = 90 * Math.PI / 180 //*deg/180 // 180/2
     var x = xCoordStart
     var y = yCoordStart
-    // // this.movie = movie
-    // console.log('test')
-    var mesh = createCard(this, name, 1, x, y, xCoordEnd - xCoordStart, yCoordEnd - yCoordStart)
-    var filename = '/gallery/door_inside1/casarse.png'
-    this.mesh = mesh
-    // console.log('created door ' + name)
-    // console.log(mesh)
+    //load audio and place it in a reference
+    this.sound = bufferAudio(audioFilename)
 
+    // testing to add sound to the mesh
+    var mesh = createCard(this, name, 1, x, y, xCoordEnd - xCoordStart, yCoordEnd - yCoordStart)
+    this.mesh = mesh
     scene.add(mesh)
+
     refreshLayerTexture(name, filename)
   }
 
-
-  openDoor()
-  {
-    console.log('opening door')
-    this.turning_door= true
+  openDoor() {
+    // log(this.sound)
+    this.animating = true
+    this.sound.play()
+    log('hey Mattias guapo, can you hear this?')
+    // log(this)
   }
+
+  spin(rotation) {
+    if (this.angle <= this.finish_angle) {
+      // relative rotation
+      rotateAroundPoint(this.mesh, new THREE.Vector3(0, 0, 0), rotation, new THREE.Vector3(0, 1, 0))
+      this.angle += rotation
+    }
+    else {
+      rotateAroundPoint(this.mesh, new THREE.Vector3(0, 0, 0), 0, new THREE.Vector3(0, 1, 0))
+      this.animating = false
+    }
+  }
+
+  zoom(zoomFactor) {
+    this.mesh.scale.x = 0.6 + 0.05 * Math.cos(this.time)
+    this.mesh.scale.y = 0.6 + 0.05 * Math.cos(this.time)
+    //  this.mesh.rotateX = 0.8 + 0.1*Math.cos(this.time)
+
+    this.time += zoomFactor
+    //log(this.time)
+  }
+
 }
 
 
-
-
-
-console.log('reading script')
 doors = []
 
 
@@ -77,7 +174,7 @@ function getJSONData(filename, cb) {
   var client = new window.XMLHttpRequest()
   client.open('GET', filename)
 
-  client.onreadystatechange = function() {
+  client.onreadystatechange = function () {
     if (client.readyState === 4) {
       log('json was read')
       var data = JSON.parse(client.responseText)
@@ -90,10 +187,10 @@ function getJSONData(filename, cb) {
 
 function _isTouchDevice() {
   try {
-    document.createEvent('TouchEvent');
-    return true;
+    document.createEvent('TouchEvent')
+    return true
   } catch (e) {
-    return false;
+    return false
   }
 }
 
@@ -105,12 +202,7 @@ function onMouseDown(event) {
 
 function onMouseUp(event) {
   mousePressed = false
-
-  // doors[0].rotation(0, 0, Math.PI / 2)
-
-  console.log('artie')
   hitTest()
-  // touchEnd(event)
 }
 
 
@@ -119,26 +211,78 @@ function GetCanvas() {
   return document.getElementsByTagName("canvas")[0]
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 /*
   Build advent calendar given arguments for number of tiles in each axle
 */
-function BuildAdventCalendar()
-{
-  console.log('creating the advent calendar')
-  tmp = new Door('First_door', 0, 0, 400, 400)
+function BuildAdventCalendar() {
+ // add audio for card to play
+ 
+  console.log('Super-Card')
+  console.log('Author: Matz JB')
+  
 
+  x = -1.3
+  y = 0.5
+  tmp = new Door('Cakey', 'gallery\\gabbys images\\cakey cat.png', 'gallery\\audios\\kram attack.mp3', x, y, 0,0)
+  doors.push(tmp)
+
+  x = -0.7
+  y = 0.5
+  tmp = new Door('Cat rat', 'gallery\\gabbys images\\cat rat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  //
+  x = -0.1
+  y = 0.5
+  tmp = new Door('catnip', 'gallery\\gabbys images\\catnip.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  x = 0.4
+  y = 0.5
+  tmp = new Door('gabby', 'gallery\\gabbys images\\gabby.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  x = -1.3
+  y = -0.2
+  tmp = new Door('kitty fairy', 'gallery\\gabbys images\\kitty fairy.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  x = -0.7
+  y = -0.2
+  tmp = new Door('mama box', 'gallery\\gabbys images\\mama box.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  x = -0.1
+  y = -0.2
+  tmp = new Door('mercat', 'gallery\\gabbys images\\mercat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  x = 0.4
+  y = -0.2
+  tmp = new Door('pandy cat', 'gallery\\gabbys images\\pandy cat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  doors.push(tmp)
+
+  x = 1
+  y = -0.2
+  tmp = new Door('pillow cat', 'gallery\\gabbys images\\pillow cat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
   doors.push(tmp)
 
 
-  // doors[0].turnOver()
-  console.log('***')
+
+
+
+
+
   console.log(doors[0])
 }
 
 
-function init() 
-{
+function init() {
   isTouchDevice = _isTouchDevice()
   log('touch device?' + isTouchDevice)
 
@@ -147,14 +291,18 @@ function init()
   var canvasWidth = window.innerWidth
   var canvasHeight = window.innerHeight
 
+  // camera = new THREE.OrthographicCamera( canvasWidth / - 2, canvasWidth / 2, canvasHeight / 2, canvasHeight / - 2, 1, 200 );
+
   camera = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerHeight, 0.01, 500)
   log('camera was init:' + camera)
   camera.position.set(0, 0, 10)
 
+  camera.add(listener)
+
   renderer = new THREE.WebGLRenderer()
   renderer.setClearColor(0xAAAAAA)
 
-  renderer.sortElements = false;
+  renderer.sortElements = false
 
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setSize(canvasWidth, canvasHeight)
@@ -167,7 +315,7 @@ function init()
   var canvas = GetCanvas()
   canvas.addEventListener('mousedown', onMouseDown, false)
   canvas.addEventListener('mouseup', onMouseUp, false)
-  canvas.addEventListener('contextmenu', function(ev) {
+  canvas.addEventListener('contextmenu', function (ev) {
     ev.preventDefault()
     return false
   }, false)
@@ -179,158 +327,59 @@ function init()
 
 
 function refreshLayerTexture(name, filename) {
-
   textureMap = new THREE.TextureLoader().load(filename)
   textureMap.magFilter = THREE.LinearFilter
   textureMap.minFilter = THREE.LinearFilter
   layer = scene.getObjectByName(name)
+
   layer.material.map = textureMap
   layer.material.blending = THREE.Normal
-
-  textureMap.onload = function() {
+  textureMap.onload = function () {
     layer.material.needsUpdate = true
   }
 }
 
 
 // check hit test against the doors in the scene, returns the door
-function hitTest()
-{
+function hitTest() {
   const raycaster = new THREE.Raycaster()
-  
-  var e = window.event;
 
-  var posX = e.clientX;
-  var posY = e.clientY;
+  var e = window.event
 
-  var x = ( posX/ window.innerWidth ) * 2 - 1
-	var y = - ( posY/ window.innerHeight ) * 2 + 1
+  var posX = e.clientX
+  var posY = e.clientY
 
-  raycaster.setFromCamera( new THREE.Vector2(x, y), camera );
+  var x = (posX / window.innerWidth) * 2 - 1
+  var y = - (posY / window.innerHeight) * 2 + 1
 
-	// calculate objects intersecting the picking ray
-	const intersects = raycaster.intersectObjects( scene.children ) 
-  log(intersects)
-  //  const door_object = scene.getObjectByName(intersects[0].object.name)
-     intersects[0].object.userData.openDoor()
-  
-  // trigger turn over which sets angle, animation takes care of animation
-
-  /*
-  i = 0;
-  for(; i<=doors.length; i++)
+  raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
+  const intersects = raycaster.intersectObjects(scene.children)
+  if (intersects.length>0)
   {
-    
-    // might be a good idea to know that xcoords are xCoordStart<xCoordEnd etc.
-    if (doors[i].xCoordStart > x || doors[i].xCoordEnd < x || doors[i].yCoordinateEnd < y || doors[i].yCoordinateStart < y  )
-    {
-      console.log('Im outside now')
-      return -1
-    }
-    else
-    {
-      console.log('Im INSIDE now')
-      return doors[i]
-    }
+    intersects[0].object.userData.openDoor()
+
+    log(intersects[0].object)
   }
-  */
 }
 
 
-// how can I refer to the door object in the scene from sprite?
-//tried userdata, will not work
-//ok
-function createCard(ref, name, z, x, y, width, height)
- {
-  // remove it if it already exist
+
+function createCard(ref, name, z, x, y, width, height) {
   var entity = scene.getObjectByName(name)
   scene.remove(entity)
 
-  var scale = 1
-  var material = new THREE.SpriteMaterial({
-    color: 0xffffff,
-    transparent: false,
-    opacity: 1,
-    depthWrite: false,
-    side: THREE.DoubleSide
-
-  })
- 
-  var layer = new THREE.Sprite(material)
-  layer.name = name
-  layer.position.set(x, y, 0)
-  layer.userData = ref
-  
-  return layer
-}
-
-function createCard(ref, name, z, x, y, width, height)
-{
-  var entity = scene.getObjectByName(name)
-  scene.remove(entity)
-
-  const geometry = new THREE.PlaneGeometry( 1, 1 );
-  const material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
-  const layer = new THREE.Mesh( geometry, material );
+  const geometry = new THREE.PlaneGeometry(1, 1)
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide,  transparent: true})
+  // , wireframe:true 
+  const layer = new THREE.Mesh(geometry, material)
 
   layer.name = name
   layer.position.set(x, y, 0)
   layer.userData = ref
-  
+
   return layer
-
 }
 
-
-function getSpriteName(spriteID) {
-  return 'sprite_' + spriteID
-}
-
-
-function getSprite(spriteID) {
-  return scene.getObjectByName(getSpriteName(spriteID))
-}
-
-
-function GetLayerAssetFilename(layerID) {
-  return './' + layerData['assetDirectory'] + '/' + getLayerName(layerID) + '_' + variantIndices[layerID] + '.png'
-}
-
-
-// function refreshLayerTexture(id, filename) {
-
-//   textureMap = new THREE.TextureLoader().load(filename)
-
-//   textureMap.magFilter = THREE.LinearFilter
-//   textureMap.minFilter = THREE.LinearFilter
-
-//   layer = getLayer(id)
-//   layer.material.map = textureMap
-//   layer.material.blending = THREE.Normal
-
-//   textureMap.onload = function() {
-//     layer.material.needsUpdate = true
-//   }
-// }
-
-
-// todo: update
-function updateButton() {
-  if (layerData['mosaicMetadata'] != undefined) {
-    var billboard = createSprite(layerData.indices,
-      layerData['mosaicMetadata'],
-      layerData['spritemapMetadata'])
-    billboard.material.needsUpdate = true
-
-    // remove previously created billboards, if any
-    var billboardName = "billboard"
-    var entity = scene.getObjectByName(billboardName)
-    scene.remove(entity)
-    // create and add billboard geometry
-    billboard.name = billboardName
-    scene.add(billboard)
-  }
-}
 
 function onWindowResize() {
   var canvasWidth = window.innerWidth
@@ -342,37 +391,19 @@ function onWindowResize() {
 }
 
 function render() {
-  scene.background = new THREE.Color(0.5, 0.5, 0)
+  scene.background = new THREE.Color(0.01, 0.02, 0.2)
   renderer.render(scene, camera)
 }
 
 
-var rotation =0
-var offset=0
-
 function animate() {
+  // setTimeout( function() {
+  //     requestAnimationFrame( animate )
+  // }, 1000.0 / 40.0 )
 
-  setTimeout( function() {
-      requestAnimationFrame( animate );
-  }, 1000 / 60 );
-
-  
-
-  for(i=0; i<doors.length;i++)
-  {
-
-    if (doors[i].turning_door && rotation<90)
-{     
-        // doors[i].mesh.position.set(offset, 0, 0)
-        rotation+=0.001
-        doors[i].mesh.rotation.set(0, rotation, 0, 'XYZ')
-        // window.requestAnimationFrame(animate)
-
-        // log(doors[i].mesh.rotation.y)
-        // log(offset)
-        // doors[i].mesh.material.rotation += new three.vector3(0,0,1,10)
-        // log(doors[i].mesh.rotation)
-
+  for (i = 0; i < doors.length; i++) {
+    if (doors[i].animating) {
+      doors[i].zoom(0.01)
     }
   }
 
@@ -381,33 +412,3 @@ function animate() {
 }
 
 
-
-
-// function animate() {
-// // move door
-
-//   doors[0].rotateY(0.0001)
-
-
-//   // var i = 0
-//   // for(; i<doors.length; i++)
-//   // {
-//   //   // if(doors[i].angle>0)
-//   //   {
-//   //     // doors[i].rotation.x -= 0.001
-//   //     log('rotation now')
-//   //     // doors[i].rotateY(0.1)
-//   //     // mesh.rotateY(Math.PI / 2);
-
-//   //     // doors[i].mesh.rotateX(doors[i].angle)
-//   //     // doors[i].rotateOnAxis( new THREE.Vector3( 1,0,0), 0 );
-//   //     // doors[i].rotateOnAxis( new THREE.Vector3( 0, 0, 1), 0.001);
-//   //     // doors[i].matrixAutoUpdate  = true
-//   //     camera.updateProjectionMatrix()
-//   //     render()
-//   //   }
-//   // }
-//   camera.updateProjectionMatrix()
-//   render()
-//   window.requestAnimationFrame(animate)
-// }
