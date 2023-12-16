@@ -2,12 +2,14 @@
 Matz JB
 12/7 2023
 
-Build cards based on json
-Show 'scenes' from json
-Buffer audio when switching scene. 
+* Switch between scenes
+* Randomize the location of the sprites?
+* Animate based on the card (use a function call as argument)
+* Switch backgrounds
 
 */
 
+doors = []
 //load data from file maybe?
 jsonData = {
   "scenes": [
@@ -63,19 +65,17 @@ function log(str) {
 const listener = new THREE.AudioListener()
 
 
-function bufferAudio(filename)
-{
-    const sound = new THREE.Audio(listener)
-    const audioLoader = new THREE.AudioLoader()
-    audioLoader.load(filename, function(buffer) {
-        sound.setBuffer(buffer)
-        sound.setLoop(false)
-        sound.setVolume(0.25)
-    })
-    log('Buffering audio ' + filename)
-    return sound
+function bufferAudio(filename) {
+  const sound = new THREE.Audio(listener)
+  const audioLoader = new THREE.AudioLoader()
+  audioLoader.load(filename, function (buffer) {
+    sound.setBuffer(buffer)
+    sound.setLoop(false)
+    sound.setVolume(0.25)
+  })
+  log('Buffering audio ' + filename)
+  return sound
 }
-
 
 function rotateAroundPoint(object, anchorPoint, angle, axisrotation) {
   let moveDir = new THREE.Vector3(
@@ -96,6 +96,7 @@ function rotateAroundPoint(object, anchorPoint, angle, axisrotation) {
   object.translateOnAxis(moveDir, moveDist)
 }
 
+//add animation function (can be rotate, wiggle etc?)
 class Door {
   constructor(name, filename, audioFilename, xCoordStart, yCoordStart, xCoordEnd, yCoordEnd) {
     this.xCoordStart = xCoordStart
@@ -107,9 +108,11 @@ class Door {
     this.rotation = 0
     this.time = 0
     this.angle = 0
+    this.internalTimer = 0 //used by animation
     this.finish_angle = 90 * Math.PI / 180 //*deg/180 // 180/2
     var x = xCoordStart
     var y = yCoordStart
+    // this.wakeUpAnimationFNC = wakeUpAnimation // animation used when a wake up event is triggered
     //load audio and place it in a reference
     this.sound = bufferAudio(audioFilename)
 
@@ -122,11 +125,14 @@ class Door {
   }
 
   openDoor() {
-    // log(this.sound)
     this.animating = true
     this.sound.play()
-    log('hey Mattias guapo, can you hear this?')
-    // log(this)
+    // this.activate() //will provide a visual feedback when you click
+  }
+
+  //rotates slightly around z
+  wiggle(speed) {
+
   }
 
   spin(rotation) {
@@ -150,10 +156,25 @@ class Door {
     //log(this.time)
   }
 
+
+  // change size of object when clicked
+  wakeUpAnimation() {
+    this.wakeUpAnimationFNC(this.internalTimer)
+    this.internalTimer += 0.1
+    // this.internalTimer += 0.1
+    // if (this.internalTimer>1) {
+    //   this.mesh.scale.y = 1
+    // }
+    // else
+    // {
+    //   this.mesh.scale.y = 1 + this.internalTimer
+    // }
+
+  }
+
 }
 
 
-doors = []
 
 
 init()
@@ -220,60 +241,57 @@ function sleep(ms) {
   Build advent calendar given arguments for number of tiles in each axle
 */
 function BuildAdventCalendar() {
- // add audio for card to play
- 
+  // add audio for card to play
+
   console.log('Super-Card')
   console.log('Author: Matz JB')
-  
+
 
   x = -1.3
   y = 0.5
-  tmp = new Door('Cakey', 'gallery\\gabbys images\\cakey cat.png', 'gallery\\audios\\kram attack.mp3', x, y, 0,0)
+  tmp = new Door('Cakey', 'gallery\\gabbys images\\cakey cat.png', 'gallery\\audios\\kram attack.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = -0.7
   y = 0.5
-  tmp = new Door('Cat rat', 'gallery\\gabbys images\\cat rat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('Cat rat', 'gallery\\gabbys images\\cat rat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   //
   x = -0.1
   y = 0.5
-  tmp = new Door('catnip', 'gallery\\gabbys images\\catnip.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('catnip', 'gallery\\gabbys images\\catnip.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = 0.4
   y = 0.5
-  tmp = new Door('gabby', 'gallery\\gabbys images\\gabby.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('gabby', 'gallery\\gabbys images\\gabby.png', 'gallery\\audios\\gabby hickup.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = -1.3
   y = -0.2
-  tmp = new Door('kitty fairy', 'gallery\\gabbys images\\kitty fairy.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('kitty fairy', 'gallery\\gabbys images\\kitty fairy.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = -0.7
   y = -0.2
-  tmp = new Door('mama box', 'gallery\\gabbys images\\mama box.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('mama box', 'gallery\\gabbys images\\mama box.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = -0.1
   y = -0.2
-  tmp = new Door('mercat', 'gallery\\gabbys images\\mercat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('mercat', 'gallery\\gabbys images\\mercat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = 0.4
   y = -0.2
-  tmp = new Door('pandy cat', 'gallery\\gabbys images\\pandy cat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('pandy cat', 'gallery\\gabbys images\\pandy cat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
 
   x = 1
   y = -0.2
-  tmp = new Door('pillow cat', 'gallery\\gabbys images\\pillow cat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y,0,0)
+  tmp = new Door('pillow cat', 'gallery\\gabbys images\\pillow cat.png', 'gallery\\audios\\gabby_cat_of_the_day.mp3', x, y, 0, 0)
   doors.push(tmp)
-
-
-
 
 
 
@@ -354,8 +372,7 @@ function hitTest() {
 
   raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
   const intersects = raycaster.intersectObjects(scene.children)
-  if (intersects.length>0)
-  {
+  if (intersects.length > 0) {
     intersects[0].object.userData.openDoor()
 
     log(intersects[0].object)
@@ -369,7 +386,7 @@ function createCard(ref, name, z, x, y, width, height) {
   scene.remove(entity)
 
   const geometry = new THREE.PlaneGeometry(1, 1)
-  const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide,  transparent: true})
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true })
   // , wireframe:true 
   const layer = new THREE.Mesh(geometry, material)
 
